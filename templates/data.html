@@ -1,0 +1,466 @@
+{% extends 'base.html' %}
+
+{% block title %}Data - IoT Data Server{% endblock %}
+
+{% block head %}
+{{ super() }}
+<!-- Moment.js for date handling -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+<style>
+    .device-card {
+        transition: all 0.3s ease;
+        margin-bottom: 20px;
+    }
+    .device-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    .device-title {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .device-stats {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 15px;
+    }
+    .stat-item {
+        text-align: center;
+        flex: 1;
+        padding: 8px;
+        border-radius: 4px;
+        background-color: rgba(0,0,0,0.03);
+        margin: 0 5px;
+    }
+    .stat-item:first-child {
+        margin-left: 0;
+    }
+    .stat-item:last-child {
+        margin-right: 0;
+    }
+    .stat-label {
+        font-size: 0.8rem;
+        color: #666;
+    }
+    .stat-value {
+        font-size: 1.1rem;
+        font-weight: 600;
+        word-break: break-word;
+        max-height: 60px;
+        overflow-y: auto;
+    }
+    .topic-badge {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.5rem;
+        margin: 0.1rem;
+        display: inline-block;
+    }
+    .device-data-table {
+        font-size: 0.85rem;
+        max-height: 300px;
+        overflow-y: auto;
+        width: 100%;
+        position: relative;
+    }
+    .device-data-table .table {
+        margin-bottom: 0;
+        table-layout: fixed;
+        width: 100%;
+    }
+    .device-data-table .table-responsive {
+        overflow-x: auto;
+        max-width: 100%;
+    }
+    .device-data-table .table th,
+    .device-data-table .table td {
+        padding: 0.5rem;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        max-width: 100%;
+    }
+    .device-data-table pre {
+        max-height: 60px;
+        overflow-y: auto;
+        margin-bottom: 0;
+        font-size: 0.75rem;
+        white-space: pre-wrap;       /* css-3 */
+        white-space: -moz-pre-wrap;  /* Mozilla */
+        white-space: -pre-wrap;      /* Opera 4-6 */
+        white-space: -o-pre-wrap;    /* Opera 7 */
+        word-wrap: break-word;       /* Internet Explorer 5.5+ */
+        width: 100%;
+    }
+    .payload-cell {
+        max-width: 150px;
+    }
+    .data-table {
+        border-collapse: collapse;
+    }
+    .timestamp-column {
+        width: 30%;
+    }
+    .topic-column {
+        width: 25%;
+    }
+    .payload-column {
+        width: 45%;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="mt-3 mb-4">Telemetry Data</h2>
+    
+    <!-- Filter Form -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Filter Data</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-6">
+                    <label for="topic_id" class="form-label">Topic</label>
+                    <select class="form-select" id="topic_id" name="topic_id">
+                        <option value="">All Topics</option>
+                        {% for topic in topics %}
+                        <option value="{{ topic.id }}" {% if selected_topic == topic.id %}selected{% endif %}>
+                            {{ topic.name }} (ID: {{ topic.id }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">&nbsp;</label>
+                    <div>
+                        <button type="submit" class="btn btn-primary">Apply Filter</button>
+                        <a href="{{ url_for('data') }}" class="btn btn-outline-secondary">Reset</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Device Cards -->
+    <div class="row" id="device-cards">
+        {% if device_data %}
+            {% for device_id, info in device_data.items() %}
+            <div class="col-xl-6">
+                <div class="card device-card">
+                    <div class="card-header bg-light">
+                        <div class="device-title">
+                            <h5 class="mb-0">{{ info.device.name }}</h5>
+                            <span class="badge bg-info">ID: {{ info.device.id }}</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <!-- Device Stats -->
+                        <div class="device-stats mb-3">
+                            <div class="stat-item">
+                                <div class="stat-label">Last Seen</div>
+                                <div class="stat-value">{{ info.device.last_seen|default('-', true) }}</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Data Points</div>
+                                <div class="stat-value">{{ info.telemetry|length }}</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Last Value</div>
+                                <div class="stat-value">
+                                    {% if info.telemetry|length > 0 %}
+                                        {% set last_item = info.telemetry|first %}
+                                        {% if last_item.payload is string %}
+                                            {{ last_item.payload }}
+                                        {% else %}
+                                            {{ last_item.payload|tojson }}
+                                        {% endif %}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Data Records Title -->
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="mb-0">Data Records</h6>
+                            <button class="btn btn-sm btn-outline-primary device-export" data-device-id="{{ device_id }}">
+                                <i class="fas fa-download me-1"></i>Export Data
+                            </button>
+                        </div>
+                        
+                        <!-- Data Records -->
+                        <div class="device-data-table">
+                            <div class="table-responsive">
+                                <table class="table table-sm table-striped table-hover data-table">
+                                    <thead>
+                                        <tr>
+                                            <th class="timestamp-column">Timestamp</th>
+                                            <th class="topic-column">Topic</th>
+                                            <th class="payload-column">Payload</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in info.telemetry %}
+                                        <tr>
+                                            <td>{{ item.timestamp }}</td>
+                                            <td>
+                                                {% for topic in topics %}
+                                                    {% if topic.id == item.topic_id %}
+                                                        {{ topic.name }}
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </td>
+                                            <td class="payload-cell">
+                                                <pre><code>{{ item.payload }}</code></pre>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="alert alert-info">
+                    No telemetry data available for any device. Please check your filter settings or ensure devices are sending data.
+                </div>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Data Table -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">All Data Records</h5>
+            {% if data %}
+            <button class="btn btn-sm btn-outline-primary" id="exportCSV">
+                <i class="fas fa-download me-2"></i>Export All CSV
+            </button>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped" id="dataTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Timestamp</th>
+                            <th>Device</th>
+                            <th>Topic</th>
+                            <th>Payload</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in data %}
+                        <tr>
+                            <td>{{ item.id }}</td>
+                            <td>{{ item.timestamp }}</td>
+                            <td>
+                                {% for device in devices %}
+                                    {% if device.id == item.device_id %}
+                                        {{ device.name }}
+                                    {% endif %}
+                                {% endfor %}
+                                (ID: {{ item.device_id }})
+                            </td>
+                            <td>
+                                {% for topic in topics %}
+                                    {% if topic.id == item.topic_id %}
+                                        {{ topic.name }}
+                                    {% endif %}
+                                {% endfor %}
+                                (ID: {{ item.topic_id }})
+                            </td>
+                            <td>
+                                <pre class="mb-0"><code>{{ item.payload }}</code></pre>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center">No data available with the selected filters</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if device_data or data %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Pre-render all telemetry data for CSV export
+    const allTelemetryData = [
+        {% for item in data %}
+        {
+            id: "{{ item.id }}",
+            timestamp: "{{ item.timestamp }}",
+            device_id: "{{ item.device_id }}",
+            topic_id: "{{ item.topic_id }}",
+            payload: {{ item.payload|tojson }}
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ];
+    
+    // Pre-render device-specific telemetry data
+    const deviceData = {
+        {% for device_id, info in device_data.items() %}
+        "{{ device_id }}": {
+            device: {
+                id: "{{ info.device.id }}",
+                name: "{{ info.device.name }}",
+                description: "{{ info.device.description }}",
+                last_seen: "{{ info.device.last_seen }}"
+            },
+            telemetry: [
+                {% for item in info.telemetry %}
+                {
+                    id: "{{ item.id }}",
+                    timestamp: "{{ item.timestamp }}",
+                    device_id: "{{ item.device_id }}",
+                    topic_id: "{{ item.topic_id }}",
+                    payload: {{ item.payload|tojson }}
+                }{% if not loop.last %},{% endif %}
+                {% endfor %}
+            ]
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    };
+    
+    // Device topics mapping
+    const topics = {
+        {% for topic in topics %}
+        "{{ topic.id }}": {
+            id: "{{ topic.id }}",
+            name: "{{ topic.name }}",
+            description: "{{ topic.description }}"
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    };
+    
+    // CSV Export functionality - All data
+    function setupCsvExport() {
+        document.getElementById('exportCSV').addEventListener('click', function() {
+            let csvContent = "data:text/csv;charset=utf-8,";
+            
+            // Add headers
+            csvContent += "ID,Timestamp,Device ID,Topic ID,Payload\n";
+            
+            // Build CSV from all telemetry data
+            allTelemetryData.forEach(item => {
+                try {
+                    let row = [
+                        item.id,
+                        item.timestamp,
+                        item.device_id,
+                        item.topic_id
+                    ];
+                    
+                    // Process payload for CSV
+                    let escapedPayload;
+                    if (typeof item.payload === 'string') {
+                        // If it's already a string, escape it
+                        escapedPayload = item.payload.replace(/"/g, '""');
+                    } else {
+                        // If it's an object, stringify it and escape quotes
+                        escapedPayload = JSON.stringify(item.payload).replace(/"/g, '""');
+                    }
+                    
+                    // Add the escaped payload to the row
+                    row.push(`"${escapedPayload}"`);
+                    csvContent += row.join(',') + "\n";
+                } catch (error) {
+                    console.error("Error preparing CSV data:", error);
+                    csvContent += `${item.id},${item.timestamp},${item.device_id},${item.topic_id},"Error processing payload"\n`;
+                }
+            });
+            
+            // Create download link with filename based on selection and current date
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            
+            // Use server-side rendered filename
+            const filename = "telemetry_data_all_{% if selected_topic %}{{ selected_topic }}{% else %}all{% endif %}_{{ now.strftime('%Y%m%d_%H%M%S') }}.csv";
+            link.setAttribute("download", filename);
+            
+            // Trigger download
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+        
+        // Device-specific CSV export
+        document.querySelectorAll('.device-export').forEach(button => {
+            button.addEventListener('click', function() {
+                const deviceId = this.getAttribute('data-device-id');
+                if (!deviceData[deviceId]) return;
+                
+                let csvContent = "data:text/csv;charset=utf-8,";
+                
+                // Add headers
+                csvContent += "ID,Timestamp,Device ID,Topic ID,Payload\n";
+                
+                // Build CSV from device-specific telemetry data
+                deviceData[deviceId].telemetry.forEach(item => {
+                    try {
+                        let row = [
+                            item.id,
+                            item.timestamp,
+                            item.device_id,
+                            item.topic_id
+                        ];
+                        
+                        // Process payload for CSV
+                        let escapedPayload;
+                        if (typeof item.payload === 'string') {
+                            // If it's already a string, escape it
+                            escapedPayload = item.payload.replace(/"/g, '""');
+                        } else {
+                            // If it's an object, stringify it and escape quotes
+                            escapedPayload = JSON.stringify(item.payload).replace(/"/g, '""');
+                        }
+                        
+                        // Add the escaped payload to the row
+                        row.push(`"${escapedPayload}"`);
+                        csvContent += row.join(',') + "\n";
+                    } catch (error) {
+                        console.error("Error preparing CSV data:", error);
+                        csvContent += `${item.id},${item.timestamp},${item.device_id},${item.topic_id},"Error processing payload"\n`;
+                    }
+                });
+                
+                // Create download link
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                
+                // Device-specific filename
+                let deviceName = deviceData[deviceId].device.name;
+                deviceName = deviceName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+                const filename = `telemetry_${deviceName}_{{ now.strftime('%Y%m%d_%H%M%S') }}.csv`;
+                link.setAttribute("download", filename);
+                
+                // Trigger download
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+        });
+    }
+    
+    // Initialize export
+    setupCsvExport();
+});
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,7 @@
+/.env
+/create_mqtt_password.ps1
+/create_mqtt_password.sh
+/test_http_api.py
+/test_mqtt_client.py
+/venv
+/__pycache__

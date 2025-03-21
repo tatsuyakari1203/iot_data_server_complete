@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - IoT Data Server{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="mt-3 mb-4">Dashboard</h2>
+    
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card">
+                <div class="card-body stat-card">
+                    <i class="fas fa-users fa-3x text-primary"></i>
+                    <div class="count">{{ stats.client_count }}</div>
+                    <div class="label">Clients</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card">
+                <div class="card-body stat-card">
+                    <i class="fas fa-tags fa-3x text-success"></i>
+                    <div class="count">{{ stats.topic_count }}</div>
+                    <div class="label">Topics</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card">
+                <div class="card-body stat-card">
+                    <i class="fas fa-laptop fa-3x text-warning"></i>
+                    <div class="count">{{ stats.device_count }}</div>
+                    <div class="label">Devices</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card">
+                <div class="card-body stat-card">
+                    <i class="fas fa-database fa-3x text-info"></i>
+                    <div class="count">{{ stats.data_count }}</div>
+                    <div class="label">Data Points</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Latest Data -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Latest Telemetry Data</h5>
+                    <a href="{{ url_for('data') }}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Device ID</th>
+                                    <th>Topic ID</th>
+                                    <th>Payload</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in latest_data %}
+                                <tr>
+                                    <td>{{ item.timestamp }}</td>
+                                    <td>{{ item.device_id }}</td>
+                                    <td>{{ item.topic_id }}</td>
+                                    <td>
+                                        <code>{{ item.payload }}</code>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center">No data available</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Guide -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Quick Start Guide</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="d-flex align-items-start">
+                                <div class="badge bg-primary rounded-circle p-2 me-3">1</div>
+                                <div>
+                                    <h6>Create a Client</h6>
+                                    <p class="text-muted">Create a client and get an API key to authenticate your devices.</p>
+                                    <a href="{{ url_for('clients') }}" class="btn btn-sm btn-outline-primary">Create Client</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="d-flex align-items-start">
+                                <div class="badge bg-primary rounded-circle p-2 me-3">2</div>
+                                <div>
+                                    <h6>Create Topics</h6>
+                                    <p class="text-muted">Create topics to organize your data streams.</p>
+                                    <a href="{{ url_for('topics') }}" class="btn btn-sm btn-outline-primary">Create Topics</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="d-flex align-items-start">
+                                <div class="badge bg-primary rounded-circle p-2 me-3">3</div>
+                                <div>
+                                    <h6>Connect Devices</h6>
+                                    <p class="text-muted">Connect your ESP devices using MQTT or HTTP.</p>
+                                    <a href="{{ url_for('api_docs') }}" class="btn btn-sm btn-outline-primary">View API Docs</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,1481 @@
+{% extends 'base.html' %}
+
+{% block title %}API Documentation - IoT Data Server{% endblock %}
+
+{% block head %}
+<style>
+    /* Minimal design styles */
+    .wiki-container {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", sans-serif;
+    }
+    
+    .wiki-toc {
+        border-right: 1px solid #eee;
+        padding-right: 20px;
+        position: sticky;
+        top: 20px;
+    }
+    
+    .wiki-content {
+        line-height: 1.6;
+    }
+    
+    /* Remove shadows and make cards flat */
+    .card {
+        box-shadow: none !important;
+        border: 1px solid #eee;
+        border-radius: 4px;
+    }
+    
+    .card-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #eee;
+        font-weight: 500;
+    }
+    
+    /* Code blocks with minimal styling */
+    .code-block {
+        border: 1px solid #eee;
+        border-radius: 4px;
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+    }
+    
+    .code-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #eee;
+        padding: 0.5rem 1rem;
+        font-weight: 500;
+        color: #333;
+    }
+    
+    pre.bg-light {
+        background-color: #fafafa !important;
+        border: none;
+        border-radius: 0;
+        padding: 1rem;
+    }
+    
+    /* Tabs with minimal styling */
+    .nav-tabs {
+        border-bottom: 1px solid #eee;
+    }
+    
+    .nav-tabs .nav-link {
+        border: none;
+        border-bottom: 2px solid transparent;
+        border-radius: 0;
+        color: #555;
+    }
+    
+    .nav-tabs .nav-link.active {
+        border-bottom: 2px solid #007bff;
+        color: #007bff;
+        background-color: transparent;
+        font-weight: 500;
+    }
+    
+    /* Alerts with minimal styling */
+    .alert {
+        border: 1px solid #eee;
+        border-radius: 4px;
+        background-color: #f8f9fa;
+        box-shadow: none;
+    }
+    
+    .alert-info {
+        border-left: 3px solid #0dcaf0;
+    }
+    
+    /* Button styling */
+    .btn {
+        box-shadow: none !important;
+        font-weight: 500;
+    }
+    
+    /* Table styling */
+    .table {
+        border-color: #eee;
+    }
+    
+    .table th {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #eee;
+        border-top: none;
+    }
+    
+    /* Specific to code highlighting */
+    code {
+        font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+    }
+    
+    /* Section spacing */
+    .wiki-section {
+        padding-bottom: 1.5rem;
+        margin-bottom: 2rem;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    h2 {
+        margin-top: 2rem;
+        margin-bottom: 1.5rem;
+        font-weight: 500;
+        color: #333;
+    }
+    
+    h3 {
+        margin-top: 1.5rem;
+        font-weight: 500;
+        color: #444;
+    }
+    
+    .url-column {
+        width: 150px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid wiki-container">
+    <div class="row">
+        <div class="col-lg-3 d-none d-lg-block">
+            <div class="wiki-toc">
+                <h5 class="mb-3">Mục lục</h5>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#overview">Tổng quan</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#mqtt-protocol">Giao thức MQTT</a>
+                        <ul class="nav flex-column ms-3">
+                            <li class="nav-item">
+                                <a class="nav-link" href="#mqtt-connection">Kết nối</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#mqtt-topics">Chủ đề</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#mqtt-payload">Định dạng Payload</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#mqtt-example">Ví dụ (Arduino/ESP8266)</a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#http-api">HTTP REST API</a>
+                        <ul class="nav flex-column ms-3">
+                            <li class="nav-item">
+                                <a class="nav-link" href="#http-auth">Xác thực</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#http-publish">Publish Data</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#http-topics">Get Topics</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#http-devices">Get Devices</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#http-data">Get Telemetry Data</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#http-example">Ví dụ (Arduino/ESP8266)</a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#web-examples">Web Application Examples</a>
+                        <ul class="nav flex-column ms-3">
+                            <li class="nav-item">
+                                <a class="nav-link" href="#python-flask">Python (Flask)</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#nodejs-express">Node.js (Express)</a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#mobile-examples">Mobile App Examples</a>
+                        <ul class="nav flex-column ms-3">
+                            <li class="nav-item">
+                                <a class="nav-link" href="#flutter">Flutter</a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="col-lg-9">
+            <div class="wiki-content">
+                <h1 class="wiki-title mb-4">API Documentation</h1>
+                
+                <section id="overview" class="wiki-section mb-5">
+                    <h2>Tổng quan</h2>
+                    <p>
+                        IoT Data Server cung cấp hai phương thức để gửi dữ liệu từ thiết bị IoT tới máy chủ:
+                    </p>
+                    <ol>
+                        <li><strong>MQTT Protocol</strong> - Giao thức nhẹ, tiết kiệm năng lượng, phù hợp với các thiết bị IoT</li>
+                        <li><strong>HTTP REST API</strong> - Dễ sử dụng, tương thích rộng rãi với nhiều nền tảng</li>
+                    </ol>
+                    <p>
+                        Cả hai phương thức đều yêu cầu API key để xác thực yêu cầu. API key được tạo khi bạn đăng ký client mới 
+                        trong hệ thống và phải được đính kèm trong mọi yêu cầu.
+                    </p>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i> Trong môi trường sản xuất, hãy đảm bảo giao tiếp qua HTTPS hoặc sử dụng MQTT với TLS để bảo vệ API key của bạn.
+                    </div>
+                </section>
+                
+                <section id="mqtt-protocol" class="wiki-section mb-5">
+                    <h2>Giao thức MQTT</h2>
+                    <p class="lead">MQTT là giao thức nhẹ, hiệu quả và lý tưởng cho IoT với bảo mật tốt và độ tin cậy cao.</p>
+                    
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h3 id="mqtt-connection" class="mb-0">Kết nối MQTT</h3>
+                        </div>
+                        <div class="card-body">
+                            <p>Để kết nối với broker MQTT, sử dụng các thông số sau:</p>
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <tbody>
+                                        <tr>
+                                            <th>Broker Host</th>
+                                            <td><code>{{ request.host.split(':')[0] }}</code></td>
+                                        </tr>
+                                        <tr>
+                                            <th>Broker Port</th>
+                                            <td><code>1883</code> (không bảo mật) hoặc <code>8883</code> (TLS, nếu được cấu hình)</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Username</th>
+                                            <td><code>admin</code> (mặc định)</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Password</th>
+                                            <td><code>admin</code> (mặc định)</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i> Hãy thay đổi thông tin xác thực mặc định trong môi trường sản xuất.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h3 id="mqtt-topics" class="mb-0">Chủ đề (Topics)</h3>
+                        </div>
+                        <div class="card-body">
+                            <p>Sử dụng cấu trúc topic sau để xuất bản dữ liệu:</p>
+                            <div class="code-block">
+                                <div class="code-header">Topic Format</div>
+                                <pre class="bg-light mb-0"><code>device_name/topic_name</code></pre>
+                            </div>
+                            
+                            <p class="mt-3">Ví dụ:</p>
+                            <ul>
+                                <li><code>esp8266_sensor/temperature</code> - Dữ liệu nhiệt độ từ thiết bị esp8266_sensor</li>
+                                <li><code>raspberry_pi/camera_status</code> - Trạng thái camera từ thiết bị raspberry_pi</li>
+                                <li><code>arduino_uno/soil_moisture</code> - Dữ liệu độ ẩm đất từ arduino_uno</li>
+                            </ul>
+                            
+                            <div class="alert alert-info mt-3">
+                                <i class="fas fa-info-circle me-2"></i> Thiết bị và topic sẽ được tự động tạo trong cơ sở dữ liệu nếu chưa tồn tại.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h3 id="mqtt-payload" class="mb-0">Định dạng Payload</h3>
+                        </div>
+                        <div class="card-body">
+                            <p>Payload phải ở định dạng JSON và <strong>phải chứa API key</strong> để xác thực:</p>
+                            <div class="code-block">
+                                <div class="code-header">JSON Payload Structure</div>
+                                <pre class="bg-light mb-0"><code>{
+  "api_key": "YOUR_API_KEY",
+  ... other data fields ...
+}</code></pre>
+                            </div>
+                            
+                            <p class="mt-3">Ví dụ về payload hợp lệ:</p>
+                            <div class="code-block">
+                                <div class="code-header">Example Payload</div>
+                                <pre class="bg-light mb-0"><code>{
+  "api_key": "b6266465-0949-437b-b0bb-3591408501c6",
+  "value": 25.3,
+  "timestamp": 1742593818.614071,
+  "unit": "celsius",
+  "sensor_type": "temperature",
+  "device_info": {
+    "name": "esp8266_sensor",
+    "type": "DHT22",
+    "firmware": "1.0.0"
+  }
+}</code></pre>
+                            </div>
+                            
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i> API key sẽ được loại bỏ khỏi payload trước khi lưu vào cơ sở dữ liệu.
+                            </div>
+                            
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-circle me-2"></i> Nếu API key không hợp lệ hoặc không được cung cấp, tin nhắn sẽ bị từ chối.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 id="mqtt-example" class="mb-0">Ví dụ (Arduino/ESP8266)</h3>
+                        </div>
+                        <div class="card-body">
+                            <p>Ví dụ code ESP8266 sử dụng PubSubClient để kết nối với MQTT broker:</p>
+                            <div class="code-block">
+                                <div class="code-header">Arduino/ESP8266 Example</div>
+                                <pre class="bg-light mb-0"><code>#include &lt;ESP8266WiFi.h&gt;
+#include &lt;PubSubClient.h&gt;
+#include &lt;ArduinoJson.h&gt;
+
+const char* ssid = "YOUR_WIFI_SSID";
+const char* password = "YOUR_WIFI_PASSWORD";
+const char* mqtt_server = "{{ request.host.split(':')[0] }}";
+const int mqtt_port = 1883;
+const char* mqtt_username = "admin";
+const char* mqtt_password = "admin";
+const char* api_key = "YOUR_API_KEY";
+const char* device_name = "esp8266_sensor";
+const char* topic_name = "temperature";
+
+WiFiClient espClient;
+PubSubClient client(espClient);
+
+void setup() {
+  Serial.begin(115200);
+  
+  // Connect to Wi-Fi
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("WiFi connected");
+  
+  // Connect to MQTT
+  client.setServer(mqtt_server, mqtt_port);
+}
+
+void loop() {
+  if (!client.connected()) {
+    reconnect();
+  }
+  client.loop();
+  
+  // Read sensor data
+  float temp = 25.5; // Replace with actual sensor reading
+  
+  // Create full topic (device_name/topic_name)
+  String topic = String(device_name) + "/" + String(topic_name);
+  
+  // Create JSON payload WITH API key
+  StaticJsonDocument&lt;200&gt; doc;
+  doc["api_key"] = api_key;
+  doc["value"] = temp;
+  doc["unit"] = "celsius";
+  doc["timestamp"] = millis();
+  
+  char jsonBuffer[256];
+  serializeJson(doc, jsonBuffer);
+  
+  // Publish to MQTT
+  Serial.print("Publishing to topic: ");
+  Serial.println(topic);
+  Serial.print("Payload: ");
+  Serial.println(jsonBuffer);
+  
+  client.publish(topic.c_str(), jsonBuffer);
+  delay(5000);
+}
+
+void reconnect() {
+  // Loop until we're reconnected
+  while (!client.connected()) {
+    Serial.print("Attempting MQTT connection...");
+    // Create a client ID
+    String clientId = "ESP8266Client-";
+    clientId += String(random(0xffff), HEX);
+    
+    // Attempt to connect with username/password
+    if (client.connect(clientId.c_str(), mqtt_username, mqtt_password)) {
+      Serial.println("connected");
+    } else {
+      Serial.print("failed, rc=");
+      Serial.print(client.state());
+      Serial.println(" try again in 5 seconds");
+      delay(5000);
+    }
+  }
+}</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+                <section id="http-api" class="wiki-section mb-5">
+                    <h2>HTTP REST API</h2>
+                    <p class="lead">API REST cung cấp phương thức tương tác dễ dàng với hệ thống IoT Data Server thông qua các HTTP endpoints.</p>
+                    
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h3 id="http-auth" class="mb-0">Xác thực</h3>
+                        </div>
+                        <div class="card-body">
+                            <p>Tất cả các yêu cầu API phải được xác thực bằng API key. Có hai cách để cung cấp API key:</p>
+                            
+                            <ol>
+                                <li>
+                                    <strong>Header (khuyến nghị)</strong>
+                                    <div class="code-block">
+                                        <div class="code-header">API Key Header</div>
+                                        <pre class="bg-light mb-0"><code>X-API-Key: YOUR_API_KEY</code></pre>
+                                    </div>
+                                </li>
+                                <li>
+                                    <strong>Query Parameter</strong>
+                                    <div class="code-block">
+                                        <div class="code-header">Query Parameter</div>
+                                        <pre class="bg-light mb-0"><code>?api_key=YOUR_API_KEY</code></pre>
+                                    </div>
+                                </li>
+                            </ol>
+                            
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i> Nên sử dụng header thay vì query parameter để tránh API key bị lộ trong các log files và URL.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h3 id="http-publish" class="mb-0">Publish Data</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <tbody>
+                                        <tr>
+                                            <th class="url-column">URL</th>
+                                            <td><code>/api/publish</code></td>
+                                        </tr>
+                                        <tr>
+                                            <th>Method</th>
+                                            <td><code>POST</code></td>
+                                        </tr>
+                                        <tr>
+                                            <th>Content-Type</th>
+                                            <td><code>application/json</code></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <div class="mt-3">
+                                <h5>Request</h5>
+                                <div class="code-block mb-3">
+                                    <div class="code-header">Headers</div>
+                                    <pre class="bg-light mb-0"><code>Content-Type: application/json
+X-API-Key: YOUR_API_KEY</code></pre>
+                                </div>
+                                
+                                <div class="code-block mb-3">
+                                    <div class="code-header">JSON Request Body</div>
+                                    <pre class="bg-light mb-0"><code>{
+  "device": "device_name",
+  "topic": "topic_name",
+  "payload": {
+    "value": 25.3,
+    "unit": "celsius",
+    "timestamp": 1742593818.614071
+  }
+}</code></pre>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <h5>Response</h5>
+                                <div class="code-block mb-3">
+                                    <div class="code-header">Success (200 OK)</div>
+                                    <pre class="bg-light mb-0"><code>{
+  "success": true,
+  "message": "Data published successfully"
+}</code></pre>
+                                </div>
+                                
+                                <div class="code-block">
+                                    <div class="code-header">Error (401 Unauthorized)</div>
+                                    <pre class="bg-light mb-0"><code>{
+  "success": false,
+  "error": "Invalid API key"
+}</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h3 id="http-topics" class="mb-0">Get Topics</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <tbody>
+                                        <tr>
+                                            <th class="url-column">URL</th>
+                                            <td><code>/api/topics</code></td>
+                                        </tr>
+                                        <tr>
+                                            <th>Method</th>
+                                            <td><code>GET</code></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <div class="mt-3">
+                                <h5>Request</h5>
+                                <div class="code-block mb-3">
+                                    <div class="code-header">Headers</div>
+                                    <pre class="bg-light mb-0"><code>X-API-Key: YOUR_API_KEY</code></pre>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <h5>Response</h5>
+                                <div class="code-block">
+                                    <div class="code-header">Success (200 OK)</div>
+                                    <pre class="bg-light mb-0"><code>{
+  "success": true,
+  "topics": [
+    {
+      "id": 1,
+      "name": "temperature",
+      "description": "Temperature readings",
+      "created_at": "2023-04-15T10:20:30"
+    },
+    {
+      "id": 2,
+      "name": "humidity",
+      "description": "Humidity readings",
+      "created_at": "2023-04-15T10:20:30"
+    }
+  ]
+}</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h3 id="http-devices" class="mb-0">Get Devices</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <tbody>
+                                        <tr>
+                                            <th class="url-column">URL</th>
+                                            <td><code>/api/devices</code></td>
+                                        </tr>
+                                        <tr>
+                                            <th>Method</th>
+                                            <td><code>GET</code></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <div class="mt-3">
+                                <h5>Request</h5>
+                                <div class="code-block mb-3">
+                                    <div class="code-header">Headers</div>
+                                    <pre class="bg-light mb-0"><code>X-API-Key: YOUR_API_KEY</code></pre>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <h5>Response</h5>
+                                <div class="code-block">
+                                    <div class="code-header">Success (200 OK)</div>
+                                    <pre class="bg-light mb-0"><code>{
+  "success": true,
+  "devices": [
+    {
+      "id": 1,
+      "name": "esp8266_sensor",
+      "description": "ESP8266 temperature sensor",
+      "client_id": 1,
+      "last_seen": "2023-04-15T10:30:45",
+      "created_at": "2023-04-15T10:20:30"
+    },
+    {
+      "id": 2,
+      "name": "raspberry_pi",
+      "description": "Raspberry Pi with camera",
+      "client_id": 1,
+      "last_seen": "2023-04-15T10:35:12",
+      "created_at": "2023-04-15T10:20:30"
+    }
+  ]
+}</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h3 id="http-data" class="mb-0">Get Telemetry Data</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <tbody>
+                                        <tr>
+                                            <th class="url-column">URL</th>
+                                            <td><code>/api/data</code></td>
+                                        </tr>
+                                        <tr>
+                                            <th>Method</th>
+                                            <td><code>GET</code></td>
+                                        </tr>
+                                        <tr>
+                                            <th>Query Parameters</th>
+                                            <td>
+                                                <ul class="mb-0">
+                                                    <li><code>device_id</code> - (Optional) Filter by device ID</li>
+                                                    <li><code>topic_id</code> - (Optional) Filter by topic ID</li>
+                                                    <li><code>limit</code> - (Optional) Limit number of results (default: 100)</li>
+                                                </ul>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <div class="mt-3">
+                                <h5>Request</h5>
+                                <div class="code-block mb-3">
+                                    <div class="code-header">Headers</div>
+                                    <pre class="bg-light mb-0"><code>X-API-Key: YOUR_API_KEY</code></pre>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <h5>Response</h5>
+                                <div class="code-block">
+                                    <div class="code-header">Success (200 OK)</div>
+                                    <pre class="bg-light mb-0"><code>{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "device_id": 1,
+      "device_name": "esp8266_sensor",
+      "topic_id": 1,
+      "topic_name": "temperature",
+      "payload": {
+        "value": 25.3,
+        "unit": "celsius",
+        "timestamp": 1742593818.614071
+      },
+      "created_at": "2023-04-15T10:25:30"
+    },
+    {
+      "id": 2,
+      "device_id": 1,
+      "device_name": "esp8266_sensor",
+      "topic_id": 2,
+      "topic_name": "humidity",
+      "payload": {
+        "value": 68.2,
+        "unit": "percent",
+        "timestamp": 1742593820.123456
+      },
+      "created_at": "2023-04-15T10:25:35"
+    }
+  ]
+}</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 id="http-example" class="mb-0">Ví dụ (Arduino/ESP8266)</h3>
+                        </div>
+                        <div class="card-body">
+                            <p>Ví dụ code ESP8266 sử dụng HTTP API để gửi dữ liệu:</p>
+                            <div class="code-block">
+                                <div class="code-header">Arduino/ESP8266 HTTP Client Example</div>
+                                <pre class="bg-light mb-0"><code>#include &lt;ESP8266WiFi.h&gt;
+#include &lt;ESP8266HTTPClient.h&gt;
+#include &lt;ArduinoJson.h&gt;
+
+const char* ssid = "YOUR_WIFI_SSID";
+const char* password = "YOUR_WIFI_PASSWORD";
+const char* server_url = "http://{{ request.host }}/api/publish";
+const char* api_key = "YOUR_API_KEY";
+const char* device_name = "esp8266_sensor";
+const char* topic_name = "temperature";
+
+void setup() {
+  Serial.begin(115200);
+  // Connect to Wi-Fi
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("WiFi connected");
+}
+
+void loop() {
+  if (WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+    http.begin(server_url);
+    
+    // Add API key to headers
+    http.addHeader("Content-Type", "application/json");
+    http.addHeader("X-API-Key", api_key);
+    
+    // Create JSON payload
+    StaticJsonDocument&lt;200&gt; doc;
+    doc["device"] = device_name;
+    doc["topic"] = topic_name;
+    
+    JsonObject payload = doc.createNestedObject("payload");
+    payload["value"] = 25.5; // Replace with actual sensor reading
+    payload["unit"] = "celsius";
+    payload["timestamp"] = millis();
+    
+    String jsonPayload;
+    serializeJson(doc, jsonPayload);
+    
+    // Send POST request
+    Serial.print("Sending HTTP POST: ");
+    Serial.println(jsonPayload);
+    
+    int httpCode = http.POST(jsonPayload);
+    if (httpCode > 0) {
+      String response = http.getString();
+      Serial.println("Response code: " + String(httpCode));
+      Serial.println("Response: " + response);
+    } else {
+      Serial.println("HTTP request failed");
+    }
+    
+    http.end();
+    delay(5000);
+  }
+}</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+                <section id="web-examples" class="wiki-section mb-5">
+                    <h2>Web Application Examples</h2>
+                    <p class="lead">Các ví dụ về cách xây dựng ứng dụng web sử dụng IoT Data Server API.</p>
+                    
+                    <ul class="nav nav-tabs mb-4" id="webExamplesTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="python-tab" data-bs-toggle="tab" data-bs-target="#python" type="button" role="tab" aria-controls="python" aria-selected="true">Python (Flask)</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="nodejs-tab" data-bs-toggle="tab" data-bs-target="#nodejs" type="button" role="tab" aria-controls="nodejs" aria-selected="false">Node.js (Express)</button>
+                        </li>
+                    </ul>
+                    
+                    <div class="tab-content" id="webExamplesTabContent">
+                        <div class="tab-pane fade show active" id="python" role="tabpanel" aria-labelledby="python-tab">
+                            <h3 id="python-flask">Python Flask Example</h3>
+                            <p>Ứng dụng mẫu sử dụng Flask framework để hiển thị dữ liệu từ IoT Data Server.</p>
+                            
+                            <div class="code-block mb-4">
+                                <div class="code-header">Python Flask Example App</div>
+                                <pre class="bg-light p-3 mb-0"><code class="language-python">from flask import Flask, render_template, jsonify, request
+import requests
+import json
+
+app = Flask(__name__)
+
+# Configuration
+API_KEY = "YOUR_API_KEY"
+IOT_SERVER_URL = "http://{{ request.host.split(':')[0] }}:5000"
+
+@app.route('/')
+def index():
+  return render_template('index.html')
+
+@app.route('/data')
+def get_data():
+  # Get parameters from request
+  device = request.args.get('device', 'default_device')
+  topic = request.args.get('topic', 'temperature')
+  limit = request.args.get('limit', 10)
+  
+  # Fetch data from IoT server
+  url = f"{IOT_SERVER_URL}/api/data/{device}/{topic}"
+  headers = {"X-API-Key": API_KEY}
+  
+  try:
+    response = requests.get(url, headers=headers, params={"limit": limit})
+    if response.status_code == 200:
+      return jsonify(response.json())
+    else:
+      return jsonify({"error": f"API request failed with status code {response.status_code}"}), 500
+  except Exception as e:
+    return jsonify({"error": str(e)}), 500
+
+@app.route('/dashboard')
+def dashboard():
+  return render_template('dashboard.html')
+
+# Helper function to get latest data for all devices
+def get_latest_data():
+  url = f"{IOT_SERVER_URL}/api/data"
+  headers = {"X-API-Key": API_KEY}
+  
+  try:
+    response = requests.get(url, headers=headers, params={"latest": True})
+    if response.status_code == 200:
+      return response.json()
+    else:
+      return []
+  except:
+    return []
+
+if __name__ == '__main__':
+  app.run(debug=True, port=5001)</code></pre>
+                            </div>
+                            
+                            <div class="code-block mb-4">
+                                <div class="code-header">templates/index.html</div>
+                                <pre class="bg-light p-3 mb-0"><code class="language-html">&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+    &lt;title&gt;IoT Data Viewer&lt;/title&gt;
+    &lt;link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css"&gt;
+    &lt;script src="https://cdn.jsdelivr.net/npm/chart.js"&gt;&lt;/script&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;div class="container mt-5"&gt;
+        &lt;h1&gt;IoT Data Viewer&lt;/h1&gt;
+        &lt;div class="row mt-4"&gt;
+            &lt;div class="col-md-6"&gt;
+                &lt;div class="card"&gt;
+                    &lt;div class="card-header"&gt;Temperature&lt;/div&gt;
+                    &lt;div class="card-body"&gt;
+                        &lt;canvas id="tempChart"&gt;&lt;/canvas&gt;
+                    &lt;/div&gt;
+                &lt;/div&gt;
+            &lt;/div&gt;
+            &lt;div class="col-md-6"&gt;
+                &lt;div class="card"&gt;
+                    &lt;div class="card-header"&gt;Latest Reading&lt;/div&gt;
+                    &lt;div class="card-body"&gt;
+                        &lt;table class="table" id="dataTable"&gt;
+                            &lt;thead&gt;
+                                &lt;tr&gt;
+                                    &lt;th&gt;Time&lt;/th&gt;
+                                    &lt;th&gt;Value&lt;/th&gt;
+                                &lt;/tr&gt;
+                            &lt;/thead&gt;
+                            &lt;tbody&gt;&lt;/tbody&gt;
+                        &lt;/table&gt;
+                    &lt;/div&gt;
+                &lt;/div&gt;
+            &lt;/div&gt;
+        &lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;script&gt;
+        // Fetch data and update charts
+        async function fetchData() {
+            const response = await fetch('/data?device=esp8266_sensor&topic=temperature&limit=20');
+            const data = await response.json();
+            
+            // Update table
+            const tableBody = document.querySelector('#dataTable tbody');
+            tableBody.innerHTML = '';
+            
+            // Update chart
+            const labels = [];
+            const values = [];
+            
+            data.forEach(item => {
+                // Add to table
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    &lt;td&gt;${new Date(item.timestamp).toLocaleString()}&lt;/td&gt;
+                    &lt;td&gt;${item.payload.value}°C&lt;/td&gt;
+                `;
+                tableBody.appendChild(row);
+                
+                // Add to chart data
+                labels.push(new Date(item.timestamp).toLocaleTimeString());
+                values.push(item.payload.value);
+            });
+            
+            // Create chart
+            const ctx = document.getElementById('tempChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels.reverse(),
+                    datasets: [{
+                        label: 'Temperature (°C)',
+                        data: values.reverse(),
+                        backgroundColor: 'rgba(0, 123, 255, 0.2)',
+                        borderColor: 'rgba(0, 123, 255, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: false
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Initial fetch
+        fetchData();
+        
+        // Update every 30 seconds
+        setInterval(fetchData, 30000);
+    &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+                            </div>
+                        </div>
+                        
+                        <div class="tab-pane fade" id="nodejs" role="tabpanel" aria-labelledby="nodejs-tab">
+                            <h3 id="nodejs-express">Node.js Express Example</h3>
+                            <p>Ứng dụng mẫu sử dụng Express.js framework để hiển thị dữ liệu từ IoT Data Server.</p>
+                            
+                            <div class="code-block mb-4">
+                                <div class="code-header">Node.js Express Example App</div>
+                                <pre class="bg-light p-3 mb-0"><code class="language-javascript">const express = require('express');
+const path = require('path');
+const axios = require('axios');
+
+const app = express();
+const port = 5001;
+
+// Configuration
+const API_KEY = 'YOUR_API_KEY';
+const IOT_SERVER_URL = 'http://{{ request.host.split(':')[0] }}:5000';
+
+// Middleware
+app.use(express.json());
+app.use(express.static('public'));
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+
+// Routes
+app.get('/', (req, res) => {
+  res.render('index');
+});
+
+app.get('/api/data', async (req, res) => {
+  try {
+    const device = req.query.device || 'default_device';
+    const topic = req.query.topic || 'temperature';
+    const limit = req.query.limit || 10;
+    
+    const response = await axios.get(
+      `${IOT_SERVER_URL}/api/data/${device}/${topic}?limit=${limit}`,
+      { headers: { 'X-API-Key': API_KEY } }
+    );
+    
+    res.json(response.data);
+  } catch (error) {
+    console.error('Error fetching data:', error);
+    res.status(500).json({ error: 'Failed to fetch data' });
+  }
+});
+
+app.post('/api/publish', async (req, res) => {
+  try {
+    const { device, topic, payload } = req.body;
+    
+    const response = await axios.post(
+      `${IOT_SERVER_URL}/api/publish`,
+      { device, topic, payload },
+      { headers: { 'X-API-Key': API_KEY } }
+    );
+    
+    res.json(response.data);
+  } catch (error) {
+    console.error('Error publishing data:', error);
+    res.status(500).json({ error: 'Failed to publish data' });
+  }
+});
+
+app.get('/dashboard', (req, res) => {
+  res.render('dashboard');
+});
+
+// Start server
+app.listen(port, () => {
+  console.log(`Server running at http://localhost:${port}`);
+});</code></pre>
+                            </div>
+                            
+                            <div class="code-block mb-4">
+                                <div class="code-header">views/index.ejs</div>
+                                <pre class="bg-light p-3 mb-0"><code class="language-html">&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+  &lt;title&gt;IoT Data Dashboard&lt;/title&gt;
+  &lt;link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css"&gt;
+  &lt;script src="https://cdn.jsdelivr.net/npm/chart.js"&gt;&lt;/script&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;div class="container mt-4"&gt;
+    &lt;h1&gt;IoT Data Dashboard&lt;/h1&gt;
+    
+    &lt;div class="row mt-4"&gt;
+      &lt;div class="col-lg-8"&gt;
+        &lt;div class="card"&gt;
+          &lt;div class="card-header"&gt;
+            &lt;h5&gt;Temperature Trends&lt;/h5&gt;
+          &lt;/div&gt;
+          &lt;div class="card-body"&gt;
+            &lt;canvas id="tempChart"&gt;&lt;/canvas&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+      
+      &lt;div class="col-lg-4"&gt;
+        &lt;div class="card"&gt;
+          &lt;div class="card-header"&gt;
+            &lt;h5&gt;Latest Reading&lt;/h5&gt;
+          &lt;/div&gt;
+          &lt;div class="card-body"&gt;
+            &lt;div class="d-flex justify-content-center"&gt;
+              &lt;div class="display-1" id="currentTemp"&gt;--&lt;/div&gt;
+              &lt;div class="h1 mt-2"&gt;°C&lt;/div&gt;
+            &lt;/div&gt;
+            &lt;p class="text-center" id="lastUpdate"&gt;Last updated: --&lt;/p&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;script&gt;
+    let tempChart;
+    
+    async function fetchData() {
+      const response = await fetch('/api/data?device=esp8266_sensor&topic=temperature&limit=20');
+      const data = await response.json();
+      
+      if (data.length > 0) {
+        // Update current temperature
+        const latestReading = data[0];
+        document.getElementById('currentTemp').textContent = latestReading.payload.value;
+        document.getElementById('lastUpdate').textContent = 'Last updated: ' + 
+          new Date(latestReading.timestamp).toLocaleString();
+        
+        // Update chart
+        const labels = [];
+        const values = [];
+        
+        data.reverse().forEach(reading => {
+          labels.push(new Date(reading.timestamp).toLocaleTimeString());
+          values.push(reading.payload.value);
+        });
+        
+        if (tempChart) {
+          tempChart.data.labels = labels;
+          tempChart.data.datasets[0].data = values;
+          tempChart.update();
+        } else {
+          const ctx = document.getElementById('tempChart').getContext('2d');
+          tempChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels: labels.reverse(),
+              datasets: [{
+                label: 'Temperature (°C)',
+                data: values.reverse(),
+                borderColor: '#0d6efd',
+                backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                borderWidth: 2,
+                tension: 0.3,
+                fill: true
+              }]
+            },
+            options: {
+              responsive: true,
+              scales: {
+                y: {
+                  beginAtZero: false,
+                  title: {
+                    display: true,
+                    text: 'Temperature (°C)'
+                  }
+                },
+                x: {
+                  title: {
+                    display: true,
+                    text: 'Time'
+                  }
+                }
+              }
+            }
+          });
+        }
+      }
+    }
+    
+    // Initial fetch
+    fetchData();
+    
+    // Update every 30 seconds
+    setInterval(fetchData, 30000);
+  &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+                <section id="mobile-examples" class="wiki-section mb-5">
+                    <h2>Mobile App Examples</h2>
+                    <p class="lead">Các ví dụ về cách xây dựng ứng dụng di động sử dụng IoT Data Server API.</p>
+                    
+                    <h3 id="flutter">Flutter Example</h3>
+                    <p>Ứng dụng mẫu sử dụng Flutter framework để hiển thị dữ liệu IoT trên nền tảng di động.</p>
+                    
+                    <div class="code-block mb-4">
+                        <div class="code-header">Flutter Example App (main.dart)</div>
+                        <pre class="bg-light p-3 mb-0"><code class="language-dart">import 'dart:async';
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:fl_chart/fl_chart.dart';
+import 'package:intl/intl.dart';
+
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'IoT Data Viewer',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        useMaterial3: true,
+      ),
+      home: const HomePage(),
+    );
+  }
+}
+
+class HomePage extends StatefulWidget {
+  const HomePage({Key? key}) : super(key: key);
+
+  @override
+  _HomePageState createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  // Configuration
+  final String apiKey = 'YOUR_API_KEY';
+  final String serverUrl = 'http://{{ request.host.split(':')[0] }}:5000';
+  final String deviceName = 'esp8266_sensor';
+  final String topicName = 'temperature';
+  
+  List<DataReading> readings = [];
+  Timer? refreshTimer;
+  bool isLoading = true;
+  String? errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchData();
+    // Set up periodic refresh
+    refreshTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+      fetchData();
+    });
+  }
+
+  @override
+  void dispose() {
+    refreshTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> fetchData() async {
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
+
+    try {
+      final response = await http.get(
+        Uri.parse('$serverUrl/api/data/$deviceName/$topicName?limit=20'),
+        headers: {'X-API-Key': apiKey},
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        setState(() {
+          readings = data.map((item) => DataReading.fromJson(item)).toList();
+          isLoading = false;
+        });
+      } else {
+        setState(() {
+          errorMessage = 'Error fetching data: ${response.statusCode}';
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        errorMessage = 'Network error: $e';
+        isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('IoT Data Viewer'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: fetchData,
+            tooltip: 'Refresh data',
+          ),
+        ],
+      ),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : errorMessage != null
+              ? Center(child: Text(errorMessage!, style: const TextStyle(color: Colors.red)))
+              : readings.isEmpty
+                  ? const Center(child: Text('No data available'))
+                  : _buildDashboard(),
+    );
+  }
+
+  Widget _buildDashboard() {
+    final latestReading = readings.isNotEmpty ? readings.first : null;
+    
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Latest reading card
+          if (latestReading != null) ...[    
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Latest Reading', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          '${latestReading.value.toStringAsFixed(1)}°C',
+                          style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    Center(
+                      child: Text(
+                        'Last updated: ${DateFormat('MMM d, HH:mm:ss').format(latestReading.timestamp)}',
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+
+          // Chart
+          Expanded(
+            child: Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Temperature History', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    Expanded(
+                      child: _buildChart(),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChart() {
+    if (readings.isEmpty) {
+      return const Center(child: Text('No data available for chart'));
+    }
+
+    // Reverse readings to show oldest to newest (left to right)
+    final data = readings.reversed.toList();
+    
+    return LineChart(
+      LineChartData(
+        gridData: FlGridData(show: true),
+        titlesData: FlTitlesData(
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 30,
+              getTitlesWidget: (value, meta) {
+                if (value.toInt() >= 0 && value.toInt() < data.length) {
+                  // Show time for every 4th reading to avoid crowding
+                  if (value.toInt() % 4 == 0) {
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: Text(
+                        DateFormat('HH:mm').format(data[value.toInt()].timestamp),
+                        style: const TextStyle(fontSize: 10),
+                      ),
+                    );
+                  }
+                }
+                return const SizedBox.shrink();
+              },
+            ),
+          ),
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 40,
+              getTitlesWidget: (value, meta) {
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: Text('${value.toInt()}°C', style: const TextStyle(fontSize: 10)),
+                );
+              },
+            ),
+          ),
+          rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        ),
+        borderData: FlBorderData(show: true),
+        lineBarsData: [
+          LineChartBarData(
+            spots: List.generate(data.length, (index) {
+              return FlSpot(index.toDouble(), data[index].value);
+            }),
+            isCurved: true,
+            color: Colors.blue,
+            barWidth: 3,
+            dotData: FlDotData(show: false),
+            belowBarData: BarAreaData(
+              show: true,
+              color: Colors.blue.withOpacity(0.2),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class DataReading {
+  final DateTime timestamp;
+  final double value;
+
+  DataReading({required this.timestamp, required this.value});
+
+  factory DataReading.fromJson(Map<String, dynamic> json) {
+    return DataReading(
+      timestamp: DateTime.parse(json['timestamp']),
+      value: json['payload']['value'].toDouble(),
+    );
+  }
+}</code></pre>
+                    </div>
+                    
+                    <div class="code-block mb-4">
+                        <div class="code-header">pubspec.yaml</div>
+                        <pre class="bg-light p-3 mb-0"><code class="language-yaml">name: iot_data_viewer
+description: A mobile app to view IoT sensor data
+
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ">=2.17.0 <3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.2
+  http: ^0.13.5
+  fl_chart: ^0.55.0
+  intl: ^0.17.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+
+flutter:
+  uses-material-design: true</code></pre>
+                    </div>
+                    
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-info-circle me-2"></i> Để chạy ứng dụng Flutter, bạn cần cài đặt Flutter SDK từ <a href="https://flutter.dev/docs/get-started/install" target="_blank">flutter.dev</a>.
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

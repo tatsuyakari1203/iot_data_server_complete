@@ -1,0 +1,544 @@
+{% extends 'base.html' %}
+
+{% block title %}Devices - IoT Data Server{% endblock %}
+
+{% block head %}
+{{ super() }}
+<style>
+    .device-card {
+        transition: all 0.3s ease;
+        margin-bottom: 20px;
+    }
+    .device-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    .code-block {
+        background-color: #f8f9fa;
+        border-radius: 6px;
+        border-left: 4px solid #0d6efd;
+        margin-bottom: 1.5rem;
+    }
+    .code-block pre {
+        padding: 1.25rem;
+        margin-bottom: 0;
+        overflow-x: auto;
+        font-size: 0.875rem;
+    }
+    .connection-steps .step {
+        border-left: 2px solid #dee2e6;
+        position: relative;
+        padding-left: 2rem;
+        margin-bottom: 1.5rem;
+    }
+    .connection-steps .step:last-child {
+        margin-bottom: 0;
+    }
+    .connection-steps .step-number {
+        position: absolute;
+        left: -12px;
+        top: 0;
+        width: 24px;
+        height: 24px;
+        background-color: #0d6efd;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 0.8rem;
+    }
+    .connection-steps .step-content {
+        padding-top: 0.25rem;
+    }
+    .connection-card {
+        border: none;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        height: 100%;
+    }
+    .connection-card .card-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+    .setting-list {
+        margin-bottom: 0;
+    }
+    .setting-list li {
+        padding: 0.5rem 0;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+    .setting-list li:last-child {
+        border-bottom: none;
+    }
+    .setting-key {
+        font-weight: 600;
+        color: #495057;
+    }
+    .setting-value {
+        font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+        background-color: #f8f9fa;
+        padding: 0.2rem 0.4rem;
+        border-radius: 4px;
+        color: #e83e8c;
+    }
+    .setting-note {
+        color: #6c757d;
+        font-size: 0.85rem;
+        display: block;
+        margin-top: 0.25rem;
+    }
+    .tab-content {
+        padding-top: 1.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="mt-3 mb-4">Devices</h2>
+    
+    <div class="card device-card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Description</th>
+                            <th>Client ID</th>
+                            <th>Last Seen</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for device in devices %}
+                        <tr>
+                            <td>{{ device.id }}</td>
+                            <td>{{ device.name }}</td>
+                            <td>{{ device.description }}</td>
+                            <td>{{ device.client_id }}</td>
+                            <td>
+                                {% if device.last_seen %}
+                                    {{ device.last_seen }}
+                                {% else %}
+                                    <span class="badge bg-secondary">Never</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ device.created_at }}</td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{{ url_for('data') }}?device_id={{ device.id }}" 
+                                       class="btn btn-sm btn-outline-primary" title="View Data">
+                                        <i class="fas fa-database"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" title="Delete Device"
+                                           data-bs-toggle="modal" data-bs-target="#deleteDeviceModal{{ device.id }}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                                
+                                <!-- Delete Device Modal -->
+                                <div class="modal fade" id="deleteDeviceModal{{ device.id }}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Delete Device</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p>Are you sure you want to delete the device "<strong>{{ device.name }}</strong>"?</p>
+                                                <p class="text-danger">This action cannot be undone and will delete all associated data.</p>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <form action="{{ url_for('delete_device_route', device_id=device.id) }}" method="post">
+                                                    <input type="hidden" name="client_id" value="{{ device.client_id }}">
+                                                    <button type="submit" class="btn btn-danger">Delete</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center">No devices available. Devices will appear here when they connect to your server.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card mt-4 device-card">
+        <div class="card-header bg-primary text-white d-flex align-items-center">
+            <i class="fas fa-plug me-2"></i>
+            <h5 class="mb-0">How to Connect Devices</h5>
+        </div>
+        <div class="card-body">
+            <!-- Connection Type Tabs -->
+            <ul class="nav nav-tabs" id="connectionTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="mqtt-tab" data-bs-toggle="tab" data-bs-target="#mqtt-content" 
+                           type="button" role="tab" aria-controls="mqtt-content" aria-selected="true">
+                        <i class="fas fa-broadcast-tower me-1"></i> MQTT Connection
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="http-tab" data-bs-toggle="tab" data-bs-target="#http-content" 
+                           type="button" role="tab" aria-controls="http-content" aria-selected="false">
+                        <i class="fas fa-globe me-1"></i> HTTP Connection
+                    </button>
+                </li>
+            </ul>
+            
+            <!-- Tab Content -->
+            <div class="tab-content" id="connectionTabsContent">
+                <!-- MQTT Connection Tab -->
+                <div class="tab-pane fade show active" id="mqtt-content" role="tabpanel" aria-labelledby="mqtt-tab">
+                    <div class="row">
+                        <div class="col-lg-5 mb-4">
+                            <div class="card connection-card">
+                                <div class="card-header">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-cog me-2"></i>MQTT Broker Settings
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <ul class="list-unstyled setting-list">
+                                        <li>
+                                            <span class="setting-key">Broker Host:</span> 
+                                            <span class="setting-value">{{ request.host.split(':')[0] }}</span>
+                                        </li>
+                                        <li>
+                                            <span class="setting-key">Broker Port:</span> 
+                                            <span class="setting-value">1883</span>
+                                        </li>
+                                        <li>
+                                            <span class="setting-key">Broker Username:</span> 
+                                            <span class="setting-value">admin</span>
+                                            <span class="setting-note">Optional, depends on broker configuration</span>
+                                        </li>
+                                        <li>
+                                            <span class="setting-key">Broker Password:</span> 
+                                            <span class="setting-value">admin</span>
+                                            <span class="setting-note">Optional, depends on broker configuration</span>
+                                        </li>
+                                        <li>
+                                            <span class="setting-key">Topic Format:</span> 
+                                            <span class="setting-value">device_name/topic_name</span>
+                                            <span class="setting-note">For example: esp8266_1/temperature</span>
+                                        </li>
+                                        <li>
+                                            <span class="setting-key">API Key:</span> 
+                                            <span class="setting-value badge bg-danger">Required</span>
+                                            <span class="setting-note">Must be included in every JSON payload</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            
+                            <div class="alert alert-info mt-4">
+                                <div class="d-flex">
+                                    <div class="me-3">
+                                        <i class="fas fa-info-circle fa-2x"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="alert-heading">API Key Required</h6>
+                                        <p class="mb-0">Your API key must be included in every message payload sent to the broker.</p>
+                                        <a href="{{ url_for('clients') }}" class="alert-link">Get your API key from the Clients page</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-lg-7">
+                            <h6><i class="fas fa-exchange-alt me-2"></i>Connection Process</h6>
+                            <div class="connection-steps mb-4">
+                                <div class="step">
+                                    <div class="step-number">1</div>
+                                    <div class="step-content">
+                                        <h6>Connect to MQTT Broker</h6>
+                                        <p>Connect to the broker using its host, port, and authentication credentials if required.</p>
+                                    </div>
+                                </div>
+                                <div class="step">
+                                    <div class="step-number">2</div>
+                                    <div class="step-content">
+                                        <h6>Format Your Topic</h6>
+                                        <p>Create a topic using the format <code>device_name/topic_name</code>, for example <code>esp8266_1/temperature</code>.</p>
+                                    </div>
+                                </div>
+                                <div class="step">
+                                    <div class="step-number">3</div>
+                                    <div class="step-content">
+                                        <h6>Include API Key in Payload</h6>
+                                        <p>Add your API key to the JSON payload to authenticate your device:</p>
+                                        <pre><code class="json">{
+  "api_key": "YOUR_API_KEY", 
+  "value": 25.5,
+  "unit": "celsius",
+  "timestamp": 1679808754
+}</code></pre>
+                                    </div>
+                                </div>
+                                <div class="step">
+                                    <div class="step-number">4</div>
+                                    <div class="step-content">
+                                        <h6>Publish Messages</h6>
+                                        <p>Send your data to the topic and the server will process it automatically.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <h6 class="mt-4"><i class="fas fa-code me-2"></i>Example Arduino/ESP8266 Code</h6>
+                            <div class="code-block">
+                                <pre><code>#include &lt;ESP8266WiFi.h&gt;
+#include &lt;PubSubClient.h&gt;
+#include &lt;ArduinoJson.h&gt;
+
+// WiFi settings
+const char* ssid = "YOUR_WIFI_SSID";
+const char* password = "YOUR_WIFI_PASSWORD";
+
+// MQTT broker settings
+const char* mqtt_server = "{{ request.host.split(':')[0] }}";
+const int mqtt_port = 1883;
+const char* mqtt_username = "admin";
+const char* mqtt_password = "admin";
+
+// API and device settings
+const char* api_key = "YOUR_API_KEY"; // Your API key from the clients page
+const char* device_name = "esp8266_1";
+const char* topic_name = "temperature";
+
+WiFiClient espClient;
+PubSubClient client(espClient);
+
+void setup() {
+  Serial.begin(115200);
+  // Connect to Wi-Fi
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("WiFi connected");
+  
+  // Connect to MQTT
+  client.setServer(mqtt_server, mqtt_port);
+}
+
+void loop() {
+  if (!client.connected()) {
+    reconnect();
+  }
+  client.loop();
+  
+  // Read sensor data
+  float temp = 25.5; // Replace with actual sensor reading
+  
+  // Create full topic (device_name/topic_name)
+  String topic = String(device_name) + "/" + String(topic_name);
+  
+  // Create JSON payload WITH API key
+  StaticJsonDocument&lt;200&gt; doc;
+  doc["api_key"] = api_key; // API key must be included in every message
+  doc["value"] = temp;
+  doc["unit"] = "celsius";
+  doc["timestamp"] = millis();
+  
+  char jsonBuffer[256];
+  serializeJson(doc, jsonBuffer);
+  
+  // Publish to MQTT
+  Serial.print("Publishing to topic: ");
+  Serial.println(topic);
+  Serial.print("Payload: ");
+  Serial.println(jsonBuffer);
+  
+  client.publish(topic.c_str(), jsonBuffer);
+  delay(5000);
+}
+
+void reconnect() {
+  // Loop until we're reconnected
+  while (!client.connected()) {
+    Serial.print("Attempting MQTT connection...");
+    // Create a client ID
+    String clientId = "ESP8266Client-";
+    clientId += String(random(0xffff), HEX);
+    
+    // Attempt to connect with username/password
+    if (client.connect(clientId.c_str(), mqtt_username, mqtt_password)) {
+      Serial.println("connected");
+    } else {
+      Serial.print("failed, rc=");
+      Serial.print(client.state());
+      Serial.println(" try again in 5 seconds");
+      delay(5000);
+    }
+  }
+}</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- HTTP Connection Tab -->
+                <div class="tab-pane fade" id="http-content" role="tabpanel" aria-labelledby="http-tab">
+                    <div class="row">
+                        <div class="col-lg-5 mb-4">
+                            <div class="card connection-card">
+                                <div class="card-header">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-cog me-2"></i>HTTP API Settings
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <ul class="list-unstyled setting-list">
+                                        <li>
+                                            <span class="setting-key">API Endpoint:</span> 
+                                            <span class="setting-value">http://{{ request.host }}/api/publish</span>
+                                        </li>
+                                        <li>
+                                            <span class="setting-key">Method:</span> 
+                                            <span class="setting-value">POST</span>
+                                        </li>
+                                        <li>
+                                            <span class="setting-key">Content Type:</span> 
+                                            <span class="setting-value">application/json</span>
+                                        </li>
+                                        <li>
+                                            <span class="setting-key">API Key:</span> 
+                                            <span class="setting-value badge bg-danger">Required</span>
+                                            <span class="setting-note">Must be included in the JSON body</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            
+                            <div class="card connection-card mt-4">
+                                <div class="card-header">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-shield-alt me-2"></i>API Key Importance
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <p>The API key provides authentication and authorization for your devices. It should be:</p>
+                                    <ul>
+                                        <li>Obtained from the <a href="{{ url_for('clients') }}">Clients</a> page</li>
+                                        <li>Included in every HTTP request</li>
+                                        <li>Kept secure and not shared with unauthorized parties</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-lg-7">
+                            <h6><i class="fas fa-exchange-alt me-2"></i>Connection Process</h6>
+                            <div class="connection-steps mb-4">
+                                <div class="step">
+                                    <div class="step-number">1</div>
+                                    <div class="step-content">
+                                        <h6>Prepare JSON Payload</h6>
+                                        <p>Include device_name, topic_name, api_key and your data:</p>
+                                        <pre><code class="json">{
+  "api_key": "YOUR_API_KEY",
+  "device_name": "esp8266_1",
+  "topic_name": "temperature",
+  "value": 25.5,
+  "unit": "celsius",
+  "timestamp": 1679808754
+}</code></pre>
+                                    </div>
+                                </div>
+                                <div class="step">
+                                    <div class="step-number">2</div>
+                                    <div class="step-content">
+                                        <h6>Send HTTP POST Request</h6>
+                                        <p>Send the payload to the API endpoint <code>http://{{ request.host }}/api/publish</code></p>
+                                    </div>
+                                </div>
+                                <div class="step">
+                                    <div class="step-number">3</div>
+                                    <div class="step-content">
+                                        <h6>Process Response</h6>
+                                        <p>Check the HTTP status code for success (200) or error information.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <h6 class="mt-4"><i class="fas fa-code me-2"></i>Example Arduino/ESP8266 Code</h6>
+                            <div class="code-block">
+                                <pre><code>#include &lt;ESP8266WiFi.h&gt;
+#include &lt;ESP8266HTTPClient.h&gt;
+#include &lt;ArduinoJson.h&gt;
+
+// WiFi settings
+const char* ssid = "YOUR_WIFI_SSID";
+const char* password = "YOUR_WIFI_PASSWORD";
+
+// Server and API settings
+const char* server_url = "http://{{ request.host }}/api/publish";
+const char* api_key = "YOUR_API_KEY"; // Your API key from the clients page
+const char* device_name = "esp8266_1";
+const char* topic_name = "temperature";
+
+void setup() {
+  Serial.begin(115200);
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("WiFi connected");
+}
+
+void loop() {
+  if (WiFi.status() == WL_CONNECTED) {
+    // Read sensor data
+    float temp = 25.5; // Replace with actual sensor reading
+    
+    // Prepare JSON payload WITH API key
+    StaticJsonDocument&lt;200&gt; doc;
+    doc["api_key"] = api_key; // API key must be included in every request
+    doc["device_name"] = device_name;
+    doc["topic_name"] = topic_name;
+    doc["value"] = temp;
+    doc["unit"] = "celsius";
+    doc["timestamp"] = millis();
+    
+    char jsonBuffer[256];
+    serializeJson(doc, jsonBuffer);
+    
+    HTTPClient http;
+    WiFiClient client;
+    http.begin(client, server_url);
+    http.addHeader("Content-Type", "application/json");
+    
+    // Send HTTP POST request
+    int httpResponseCode = http.POST(jsonBuffer);
+    Serial.print("HTTP Response code: ");
+    Serial.println(httpResponseCode);
+    
+    http.end();
+  }
+  delay(5000);
+}</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
