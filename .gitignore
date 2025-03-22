@@ -7,4 +7,5 @@
 /__pycache__
 mosquitto/data/mosquitto.db
 mosquitto/log/mosquitto.log
+data.db
 
