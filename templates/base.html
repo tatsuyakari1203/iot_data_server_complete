@@ -30,10 +30,12 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
-                    {% if current_user.is_authenticated %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('api_docs') }}">API Docs</a>
+                        <a class="nav-link" href="{{ url_for('api_docs') }}">
+                            <i class="fas fa-code me-1"></i>API Docs
+                        </a>
                     </li>
+                    {% if current_user.is_authenticated %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('about') }}">
                             <i class="fas fa-info-circle me-1"></i>About
@@ -70,6 +72,7 @@
             <div class="col-md-3 col-lg-2 d-md-block sidebar collapse">
                 <div class="position-sticky">
                     <ul class="nav flex-column">
+                        {% if current_user.is_authenticated %}
                         <li class="nav-item">
                             <a class="nav-link {% if request.path == url_for('dashboard') %}active{% endif %}" href="{{ url_for('dashboard') }}">
                                 <i class="fas fa-tachometer-alt me-2"></i>Dashboard
@@ -95,6 +98,19 @@
                                 <i class="fas fa-database me-2"></i>Data
                             </a>
                         </li>
+                        {% endif %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path == url_for('api_docs') %}active{% endif %}" href="{{ url_for('api_docs') }}">
+                                <i class="fas fa-code me-2"></i>API Docs
+                            </a>
+                        </li>
+                        {% if not current_user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path == url_for('devices') %}active{% endif %}" href="{{ url_for('devices') }}">
+                                <i class="fas fa-laptop me-2"></i>Devices
+                            </a>
+                        </li>
+                        {% endif %}
                         <li class="nav-item">
                             <a class="nav-link {% if request.path == url_for('about') %}active{% endif %}" href="{{ url_for('about') }}">
                                 <i class="fas fa-info-circle me-2"></i>About

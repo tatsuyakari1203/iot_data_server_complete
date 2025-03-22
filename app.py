@@ -3,7 +3,7 @@ from flask_bootstrap import Bootstrap
 from mqtt_server import mqtt_server
 from database import (
     init_db, create_client, get_all_clients, create_topic, get_all_topics,
-    get_all_devices, delete_topic, delete_device, get_telemetry_data, delete_client
+    get_all_devices, delete_topic, delete_device, get_telemetry_data, delete_client, get_telemetry_data_count
 )
 from api import api_bp
 import threading
@@ -102,7 +102,7 @@ def dashboard():
         'client_count': len(clients),
         'topic_count': len(topics),
         'device_count': len(devices),
-        'data_count': len(latest_data)
+        'data_count': get_telemetry_data_count()  # Use a new function to get total count
     }
     
     return render_template('index.html', stats=stats, latest_data=latest_data)
@@ -193,11 +193,14 @@ def delete_device_route(device_id):
 
 # Device management
 @app.route('/devices')
-@login_required
 def devices():
-    devices = get_all_devices()
-    clients = get_all_clients()
-    return render_template('devices.html', devices=devices, clients=clients)
+    if current_user.is_authenticated:
+        devices = get_all_devices()
+        clients = get_all_clients()
+        return render_template('devices.html', devices=devices, clients=clients)
+    else:
+        # For non-authenticated users, just show device documentation
+        return render_template('devices_public.html')
 
 # Data visualization
 @app.route('/data')

@@ -408,3 +408,10 @@ def get_telemetry_data(device_id=None, topic_id=None, limit=100):
     conn.close()
     
     return [dict(item) for item in data]
+
+def get_telemetry_data_count():
+    """Get the total count of all telemetry data records in the database."""
+    conn = get_db_connection()
+    count = conn.execute('SELECT COUNT(*) FROM telemetry_data').fetchone()[0]
+    conn.close()
+    return count

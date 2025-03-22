@@ -3,142 +3,183 @@
 {% block title %}About - IoT Data Server{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <div class="mb-5 text-center">
-                <i class="fas fa-server fa-4x text-primary mb-3"></i>
-                <h1 class="mb-3">IoT Data Server</h1>
-                <p class="lead">A comprehensive platform for collecting, storing, and visualizing IoT device data</p>
-                <div class="badge bg-primary p-2">Version 1.0</div>
-            </div>
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-10">
+      <div class="text-center mb-5">
+        <i class="fas fa-server fa-4x text-primary mb-3"></i>
+        <h1 class="display-4 mb-3">IoT Data Server</h1>
+        <p class="lead">A comprehensive platform for collecting, storing, and visualizing IoT device data</p>
+        <span class="badge bg-primary fs-6">Version 1.0</span>
+      </div>
 
-            <div class="row g-4 mb-5">
-                <div class="col-md-6">
-                    <div class="p-4 bg-white">
-                        <h4 class="mb-3"><i class="fas fa-lightbulb me-2 text-warning"></i>Platform Overview</h4>
-                        <p>IoT Data Server là một nền tảng quản lý dữ liệu IoT đa chức năng, được thiết kế để giúp thu thập, lưu trữ và hiển thị dữ liệu từ các thiết bị IoT một cách dễ dàng và hiệu quả.</p>
-                        <p>Nền tảng này hỗ trợ cả giao thức MQTT và HTTP, cho phép tích hợp với nhiều loại thiết bị IoT khác nhau, từ vi điều khiển Arduino, ESP8266, ESP32 đến các thiết bị Raspberry Pi và các cảm biến thông minh.</p>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="p-4 bg-white">
-                        <h4 class="mb-3"><i class="fas fa-cogs me-2 text-secondary"></i>Tính năng chính</h4>
-                        <ul class="list-unstyled">
-                            <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>Thu thập dữ liệu qua MQTT và HTTP API</li>
-                            <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>Quản lý thiết bị và chủ đề (topics) linh hoạt</li>
-                            <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>Hiển thị dữ liệu telemetry theo thời gian thực</li>
-                            <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>Xuất dữ liệu dưới định dạng CSV</li>
-                            <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>Xác thực và phân quyền qua API keys</li>
-                        </ul>
-                    </div>
-                </div>
+      <!-- Row 1: 2 card có chiều cao đồng đều -->
+      <div class="row g-4 mb-5">
+        <!-- Card Platform Overview -->
+        <div class="col-md-6">
+          <div class="card h-100 border-0">
+            <div class="card-body d-flex flex-column">
+              <h4 class="card-title mb-3">
+                <i class="fas fa-lightbulb me-2 text-warning"></i>Platform Overview
+              </h4>
+              <p>
+                IoT Data Server là một nền tảng quản lý dữ liệu IoT đa chức năng, được thiết kế để giúp thu thập, lưu trữ và hiển thị dữ liệu từ các thiết bị IoT một cách dễ dàng và hiệu quả.
+              </p>
+              <p>
+                Nền tảng này hỗ trợ cả giao thức MQTT và HTTP, cho phép tích hợp với nhiều loại thiết bị IoT khác nhau, từ vi điều khiển Arduino, ESP8266, ESP32 đến các thiết bị Raspberry Pi và các cảm biến thông minh.
+              </p>
             </div>
-
-            <div class="p-4 bg-white mb-5">
-                <h4 class="mb-3"><i class="fas fa-user-shield me-2 text-info"></i>Tác giả</h4>
-                <div class="d-flex align-items-center">
-                    <div class="flex-shrink-0">
-                        <div class="avatar-circle">
-                            <span class="initials">NLT</span>
-                        </div>
-                    </div>
-                    <div class="flex-grow-1 ms-4">
-                        <h5 class="mb-1">Nguyễn Lê Thanh Hào</h5>
-                        <p class="mb-1 text-muted">Developer & IoT Enthusiast</p>
-                        <p class="mb-0">IoT Data Server được phát triển như một giải pháp toàn diện để giúp quản lý dữ liệu IoT một cách hiệu quả và trực quan.</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="p-4 bg-white mb-5">
-                <h4 class="mb-3"><i class="fas fa-code me-2 text-danger"></i>Công nghệ sử dụng</h4>
-                <div class="row g-3 mt-2">
-                    <div class="col-md-4 mb-2">
-                        <div class="d-flex align-items-center">
-                            <i class="fab fa-python fa-2x text-primary me-3"></i>
-                            <div>
-                                <h6 class="mb-0">Python Flask</h6>
-                                <small class="text-muted">Web Framework</small>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-2">
-                        <div class="d-flex align-items-center">
-                            <i class="fas fa-database fa-2x text-success me-3"></i>
-                            <div>
-                                <h6 class="mb-0">SQLite</h6>
-                                <small class="text-muted">Database</small>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-2">
-                        <div class="d-flex align-items-center">
-                            <i class="fab fa-docker fa-2x text-info me-3"></i>
-                            <div>
-                                <h6 class="mb-0">Docker</h6>
-                                <small class="text-muted">Containerization</small>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-2">
-                        <div class="d-flex align-items-center">
-                            <i class="fas fa-broadcast-tower fa-2x text-warning me-3"></i>
-                            <div>
-                                <h6 class="mb-0">Mosquitto</h6>
-                                <small class="text-muted">MQTT Broker</small>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-2">
-                        <div class="d-flex align-items-center">
-                            <i class="fab fa-bootstrap fa-2x text-purple me-3"></i>
-                            <div>
-                                <h6 class="mb-0">Bootstrap 5</h6>
-                                <small class="text-muted">Frontend Framework</small>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-2">
-                        <div class="d-flex align-items-center">
-                            <i class="fab fa-js fa-2x text-warning me-3"></i>
-                            <div>
-                                <h6 class="mb-0">JavaScript</h6>
-                                <small class="text-muted">Client-side Scripting</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="text-center text-muted mt-5">
-                <p> 2025 IoT Data Server. All rights reserved.</p>
-            </div>
+          </div>
         </div>
+        <!-- Card Tính năng chính -->
+        <div class="col-md-6">
+          <div class="card h-100 border-0">
+            <div class="card-body d-flex flex-column">
+              <h4 class="card-title mb-3">
+                <i class="fas fa-cogs me-2 text-secondary"></i>Tính năng chính
+              </h4>
+              <ul class="list-unstyled">
+                <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>Thu thập dữ liệu qua MQTT và HTTP API</li>
+                <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>Quản lý thiết bị và chủ đề (topics) linh hoạt</li>
+                <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>Hiển thị dữ liệu telemetry theo thời gian thực</li>
+                <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>Xuất dữ liệu dưới định dạng CSV</li>
+                <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>Xác thực và phân quyền qua API keys</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Các card bên dưới tự động scale theo nội dung -->
+      <!-- Card Tác giả -->
+      <div class="card border-0 mb-5">
+        <div class="card-body">
+          <h4 class="card-title mb-3">
+            <i class="fas fa-user-shield me-2 text-info"></i>Tác giả
+          </h4>
+          <div class="d-flex align-items-center">
+            <div class="flex-shrink-0">
+              <div class="avatar-circle">
+                <span class="initials">NLT</span>
+              </div>
+            </div>
+            <div class="flex-grow-1 ms-4">
+              <h5 class="mb-1">Nguyễn Lê Thanh Hào</h5>
+              <p class="mb-1 text-muted">Developer & IoT Enthusiast</p>
+              <p class="mb-0">IoT Data Server được phát triển như một giải pháp toàn diện để giúp quản lý dữ liệu IoT một cách hiệu quả và trực quan.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card Công nghệ sử dụng -->
+      <div class="card border-0 mb-5">
+        <div class="card-body">
+          <h4 class="card-title mb-3">
+            <i class="fas fa-code me-2 text-danger"></i>Công nghệ sử dụng
+          </h4>
+          <div class="row g-3">
+            <div class="col-md-4">
+              <div class="d-flex align-items-center">
+                <i class="fab fa-python fa-2x text-primary me-3"></i>
+                <div>
+                  <h6 class="mb-0">Python Flask</h6>
+                  <small class="text-muted">Web Framework</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="d-flex align-items-center">
+                <i class="fas fa-database fa-2x text-success me-3"></i>
+                <div>
+                  <h6 class="mb-0">SQLite</h6>
+                  <small class="text-muted">Database</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="d-flex align-items-center">
+                <i class="fab fa-docker fa-2x text-info me-3"></i>
+                <div>
+                  <h6 class="mb-0">Docker</h6>
+                  <small class="text-muted">Containerization</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="d-flex align-items-center">
+                <i class="fas fa-broadcast-tower fa-2x text-warning me-3"></i>
+                <div>
+                  <h6 class="mb-0">Mosquitto</h6>
+                  <small class="text-muted">MQTT Broker</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="d-flex align-items-center">
+                <i class="fab fa-bootstrap fa-2x text-purple me-3"></i>
+                <div>
+                  <h6 class="mb-0">Bootstrap 5</h6>
+                  <small class="text-muted">Frontend Framework</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="d-flex align-items-center">
+                <i class="fab fa-js fa-2x text-warning me-3"></i>
+                <div>
+                  <h6 class="mb-0">JavaScript</h6>
+                  <small class="text-muted">Client-side Scripting</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card GitHub Repository -->
+      <div class="card border-0 mb-5">
+        <div class="card-body text-center">
+          <h4 class="card-title mb-3">
+            <i class="fab fa-github me-2 text-dark"></i>GitHub Repository
+          </h4>
+          <p>Truy cập mã nguồn dự án tại</p>
+          <a href="https://github.com/tatsuyakari1203/iot_data_server_complete" target="_blank" class="btn btn-outline-dark">
+            <i class="fab fa-github me-2"></i>GitHub Repository
+          </a>
+        </div>
+      </div>
+
+      <div class="text-center text-muted mt-5">
+        <p>&copy; 2025 IoT Data Server. All rights reserved.</p>
+      </div>
     </div>
+  </div>
 </div>
 
 <style>
 .avatar-circle {
-    width: 80px;
-    height: 80px;
-    background-color: #0d6efd;
-    text-align: center;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  width: 80px;
+  height: 80px;
+  background-color: #0d6efd;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .initials {
-    font-size: 32px;
-    color: #fff;
-    font-weight: bold;
+  font-size: 32px;
+  color: #fff;
+  font-weight: bold;
 }
 
-.bg-white {
-    background-color: white;
-    border-radius: 4px;
+.card {
+  border-radius: 10px;
+}
+
+.card-body {
+  padding: 2rem;
 }
 </style>
 {% endblock %}
