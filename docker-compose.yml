@@ -1,23 +1,33 @@
 version: "3.7"
 
 services:
-  mqtt5:
-    image: eclipse-mosquitto
-    container_name: mqtt5
+  nanomq:
+    image: emqx/nanomq:latest
+    container_name: nanomq
     ports:
-      - "1883:1883" #default mqtt port
-      - "9001:9001" #default mqtt port for websockets
+      - "1883:1883" # Default MQTT port
+      - "8083:8083" # WebSocket port
+      - "8883:8883" # MQTT over TLS
     volumes:
-      - ./mosquitto/config:/mosquitto/config:rw
-      - ./mosquitto/data:/mosquitto/data:rw
-      - ./mosquitto/log:/mosquitto/log:rw
+      - ./nanomq/etc:/etc/nanomq:rw
+      - ./nanomq/data:/var/lib/nanomq:rw
+      - ./nanomq/log:/var/log/nanomq:rw
+    environment:
+      - NANOMQ_BROKER__URL=nmq-tcp://0.0.0.0:1883
+      - NANOMQ_BROKER__NUM_TASKQ_THREAD=4
+      - NANOMQ_BROKER__MAX_TASKQ_THREAD=4
+      - NANOMQ_BROKER__PARALLEL=0
+      - NANOMQ_WEB__SERVER_ADDR=0.0.0.0:8083
+      - NANOMQ_AUTH__ALLOW_ANONYMOUS=true # Set to false in production
+      - NANOMQ_HTTP_SERVER__ENABLE=true
+      - NANOMQ_HTTP_SERVER__PORT=8081
     restart: unless-stopped
 
 volumes:
-  config:
+  etc:
   data:
   log:
 
 networks:
   default:
-    name: mqtt5-network
+    name: nanomq-network
