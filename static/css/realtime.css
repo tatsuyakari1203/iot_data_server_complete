@@ -1,0 +1,77 @@
+/**
+ * Styles for real-time updates
+ */
+
+/* Animation for updated statistics */
+.update-flash {
+    animation: flash-highlight 1s ease-out;
+}
+
+@keyframes flash-highlight {
+    0% {
+        background-color: rgba(0, 123, 255, 0.3);
+        color: #fff;
+    }
+    100% {
+        background-color: transparent;
+        color: inherit;
+    }
+}
+
+/* Animation for new data rows */
+.new-data-row {
+    animation: row-highlight 1s ease-out;
+}
+
+@keyframes row-highlight {
+    0% {
+        background-color: rgba(0, 123, 255, 0.2);
+    }
+    100% {
+        background-color: transparent;
+    }
+}
+
+/* MQTT status indicator */
+.mqtt-status-indicator {
+    transition: all 0.3s ease;
+}
+
+/* Pulse animation for active connection */
+.pulse {
+    animation: pulse-animation 2s infinite;
+}
+
+@keyframes pulse-animation {
+    0% {
+        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(40, 167, 69, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0);
+    }
+}
+
+/* Data update indicator */
+.data-update-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #28a745;
+    margin-left: 8px;
+    position: relative;
+    top: -2px;
+}
+
+.data-update-indicator.active {
+    animation: blink-animation 1s infinite;
+}
+
+@keyframes blink-animation {
+    0% { opacity: 1; }
+    50% { opacity: 0.3; }
+    100% { opacity: 1; }
+}

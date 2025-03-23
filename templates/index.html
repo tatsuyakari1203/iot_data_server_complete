@@ -11,8 +11,8 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <i class="fas fa-server fa-2x me-3 {% if mqtt_info.is_connected %}text-success{% else %}text-danger{% endif %}"></i>
+                    <div class="d-flex align-items-center" id="mqtt-status">
+                        <i class="fas fa-server fa-2x me-3 mqtt-status-indicator {% if mqtt_info.is_connected %}text-success pulse{% else %}text-danger{% endif %}"></i>
                         <div>
                             <h5 class="mb-1">MQTT Broker Status</h5>
                             <p class="mb-0">
@@ -23,6 +23,12 @@
                             </p>
                         </div>
                     </div>
+                    <!-- Hidden element with MQTT broker info for WebSocket connection -->
+                    <div id="mqtt-broker-info" 
+                         data-host="{{ mqtt_info.broker_host }}" 
+                         data-port="{{ mqtt_info.broker_port }}" 
+                         data-ws-port="8083" 
+                         style="display: none;"></div>
                 </div>
             </div>
         </div>
@@ -34,7 +40,7 @@
             <div class="card">
                 <div class="card-body stat-card">
                     <i class="fas fa-users fa-3x text-primary"></i>
-                    <div class="count">{{ stats.client_count }}</div>
+                    <div class="count" data-id="client_count">{{ stats.client_count }}</div>
                     <div class="label">Clients</div>
                 </div>
             </div>
@@ -43,7 +49,7 @@
             <div class="card">
                 <div class="card-body stat-card">
                     <i class="fas fa-tags fa-3x text-success"></i>
-                    <div class="count">{{ stats.topic_count }}</div>
+                    <div class="count" data-id="topic_count">{{ stats.topic_count }}</div>
                     <div class="label">Topics</div>
                 </div>
             </div>
@@ -52,7 +58,7 @@
             <div class="card">
                 <div class="card-body stat-card">
                     <i class="fas fa-laptop fa-3x text-warning"></i>
-                    <div class="count">{{ stats.device_count }}</div>
+                    <div class="count" data-id="device_count">{{ stats.device_count }}</div>
                     <div class="label">Devices</div>
                 </div>
             </div>
@@ -61,7 +67,7 @@
             <div class="card">
                 <div class="card-body stat-card">
                     <i class="fas fa-database fa-3x text-info"></i>
-                    <div class="count">{{ stats.data_count }}</div>
+                    <div class="count" data-id="data_count">{{ stats.data_count }}</div>
                     <div class="label">Data Points</div>
                 </div>
             </div>
@@ -73,12 +79,15 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Latest Telemetry Data</h5>
+                    <h5 class="mb-0">
+                        Latest Telemetry Data
+                        <span class="data-update-indicator" id="data-indicator"></span>
+                    </h5>
                     <a href="{{ url_for('data') }}" class="btn btn-sm btn-outline-primary">View All</a>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-striped">
+                        <table class="table table-striped" id="latest-data-table">
                             <thead>
                                 <tr>
                                     <th>Timestamp</th>

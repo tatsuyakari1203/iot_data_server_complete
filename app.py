@@ -221,6 +221,7 @@ def data():
     # Get all devices
     devices = get_all_devices()
     topics = get_all_topics()
+    clients = get_all_clients()  # Get all clients
     
     # Initialize device data dictionary to store telemetry data for each device
     device_data = {}
@@ -246,6 +247,7 @@ def data():
                          data=all_telemetry,
                          devices=devices, 
                          topics=topics, 
+                         clients=clients,  # Pass clients to the template
                          selected_topic=topic_id,
                          now=now)
 
@@ -257,6 +259,113 @@ def api_docs():
 @app.route('/about')
 def about():
     return render_template('about.html')
+
+# API endpoints for real-time updates
+@app.route('/api/stats', methods=['GET'])
+def api_stats():
+    """API endpoint for dashboard statistics"""
+    clients = get_all_clients()
+    topics = get_all_topics()
+    devices = get_all_devices()
+    
+    stats = {
+        'client_count': len(clients),
+        'topic_count': len(topics),
+        'device_count': len(devices),
+        'data_count': get_telemetry_data_count()
+    }
+    
+    return jsonify({'stats': stats})
+
+@app.route('/api/latest_data', methods=['GET'])
+def api_latest_data():
+    """API endpoint for latest telemetry data"""
+    limit = request.args.get('limit', 10, type=int)
+    latest_data = get_telemetry_data(limit=limit)
+    
+    # Process payload - convert JSON strings to objects if possible
+    for item in latest_data:
+        try:
+            if isinstance(item['payload'], str):
+                item['payload'] = json.loads(item['payload'])
+        except (json.JSONDecodeError, TypeError):
+            pass
+    
+    return jsonify({'latest_data': latest_data})
+
+@app.route('/api/mqtt_status', methods=['GET'])
+def api_mqtt_status():
+    """API endpoint for MQTT broker status"""
+    mqtt_info = {
+        'broker_host': mqtt_server.broker_host,
+        'broker_port': mqtt_server.broker_port,
+        'is_connected': mqtt_server.client.is_connected() if hasattr(mqtt_server.client, 'is_connected') else False
+    }
+    
+    return jsonify({'mqtt_info': mqtt_info})
+
+# API endpoint for device data with client and topic information
+@app.route('/api/device_data', methods=['GET'])
+def api_device_data():
+    """API endpoint for device data with client and topic information"""
+    device_id = request.args.get('device_id', type=int)
+    topic_id = request.args.get('topic_id', type=int)
+    limit = request.args.get('limit', 50, type=int)
+    
+    # Get device data
+    device_data = {}
+    
+    # If device_id is specified, get data for that device only
+    if device_id:
+        devices = [next((d for d in get_all_devices() if d['id'] == device_id), None)]
+        if not devices[0]:
+            return jsonify({'error': 'Device not found'}), 404
+    else:
+        # Otherwise get all devices
+        devices = get_all_devices()
+    
+    # Get all topics for reference
+    all_topics = get_all_topics()
+    
+    # Get all clients for reference
+    all_clients = get_all_clients()
+    
+    # Get data for each device
+    for device in devices:
+        if device:
+            # Get telemetry data
+            telemetry = get_telemetry_data(device_id=device['id'], topic_id=topic_id, limit=limit)
+            
+            if telemetry:
+                # Find client info for this device
+                client = next((c for c in all_clients if c['id'] == device['client_id']), None)
+                
+                # Find all topics this device has sent data to
+                device_topics = []
+                topic_ids = set()
+                for item in telemetry:
+                    if item['topic_id'] not in topic_ids:
+                        topic_ids.add(item['topic_id'])
+                        topic = next((t for t in all_topics if t['id'] == item['topic_id']), None)
+                        if topic:
+                            device_topics.append(topic)
+                
+                # Process payload - convert JSON strings to objects if possible
+                for item in telemetry:
+                    try:
+                        if isinstance(item['payload'], str):
+                            item['payload'] = json.loads(item['payload'])
+                    except (json.JSONDecodeError, TypeError):
+                        pass
+                
+                device_data[device['id']] = {
+                    'device': device,
+                    'client': client,
+                    'topics': device_topics,
+                    'telemetry': telemetry
+                }
+    
+    return jsonify({'device_data': device_data})
 
 # Handle 404 errors
 @app.errorhandler(404)

@@ -15,6 +15,8 @@
     
     <!-- Custom CSS - Minimal Flat Design -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/minimal.css') }}">
+    <!-- Real-time updates CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/realtime.css') }}">
 
     {% block extra_css %}{% endblock %}
 </head>
@@ -144,6 +146,8 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <!-- Chart.js for data visualization -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Real-time updates JavaScript -->
+    <script src="{{ url_for('static', filename='js/realtime.js') }}"></script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

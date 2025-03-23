@@ -8,44 +8,49 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
 <style>
     .device-card {
-        transition: all 0.3s ease;
+        transition: all 0.2s ease;
         margin-bottom: 20px;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid #e2e8f0;
     }
     .device-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+        border-color: #cbd5e1;
     }
     .device-title {
         display: flex;
         justify-content: space-between;
         align-items: center;
     }
+    .device-header {
+        background-color: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+        padding: 12px 16px;
+    }
     .device-stats {
-        display: flex;
-        justify-content: space-between;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        gap: 12px;
         margin-bottom: 15px;
     }
     .stat-item {
         text-align: center;
-        flex: 1;
-        padding: 8px;
-        border-radius: 4px;
-        background-color: rgba(0,0,0,0.03);
-        margin: 0 5px;
-    }
-    .stat-item:first-child {
-        margin-left: 0;
-    }
-    .stat-item:last-child {
-        margin-right: 0;
+        padding: 10px 8px;
+        border-radius: 6px;
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
     }
     .stat-label {
-        font-size: 0.8rem;
-        color: #666;
+        font-size: 0.75rem;
+        color: #64748b;
+        font-weight: 500;
+        margin-bottom: 4px;
     }
     .stat-value {
-        font-size: 1.1rem;
+        font-size: 0.95rem;
         font-weight: 600;
+        color: #334155;
         word-break: break-word;
         max-height: 60px;
         overflow-y: auto;
@@ -55,6 +60,19 @@
         padding: 0.2rem 0.5rem;
         margin: 0.1rem;
         display: inline-block;
+        border-radius: 4px;
+        background-color: #e0f2fe;
+        color: #0369a1;
+        border: 1px solid #bae6fd;
+    }
+    .client-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.6rem;
+        margin-right: 0.5rem;
+        background-color: #f1f5f9;
+        color: #475569;
+        border-radius: 4px;
+        border: 1px solid #e2e8f0;
     }
     .device-data-table {
         font-size: 0.85rem;
@@ -62,6 +80,9 @@
         overflow-y: auto;
         width: 100%;
         position: relative;
+        border-radius: 6px;
+        border: 1px solid #e2e8f0;
+        
     }
     .device-data-table .table {
         margin-bottom: 0;
@@ -72,12 +93,19 @@
         overflow-x: auto;
         max-width: 100%;
     }
-    .device-data-table .table th,
+    .device-data-table .table th {
+        background-color: #f8fafc;
+        color: #475569;
+        font-weight: 600;
+        padding: 0.5rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
     .device-data-table .table td {
         padding: 0.5rem;
         word-wrap: break-word;
         overflow-wrap: break-word;
         max-width: 100%;
+        border-bottom: 1px solid #f1f5f9;
     }
     .device-data-table pre {
         max-height: 60px;
@@ -90,6 +118,10 @@
         white-space: -o-pre-wrap;    /* Opera 7 */
         word-wrap: break-word;       /* Internet Explorer 5.5+ */
         width: 100%;
+        background-color: #f8fafc;
+        padding: 4px;
+        border-radius: 4px;
+        border: 1px solid #e2e8f0;
     }
     .payload-cell {
         max-width: 150px;
@@ -109,16 +141,119 @@
     /* Pagination styles */
     .pagination-container {
         margin-top: 10px;
-        border-top: 1px solid #eee;
+        border-top: 1px solid #f1f5f9;
         padding-top: 10px;
     }
     .device-pagination .page-link {
         padding: 0.25rem 0.5rem;
         font-size: 0.75rem;
+        color: #334155;
+        border-color: #e2e8f0;
     }
     .device-pagination .page-item.active .page-link {
-        background-color: #007bff;
-        border-color: #007bff;
+        background-color: #0369a1;
+        border-color: #0369a1;
+    }
+    
+    /* Real-time update indicator */
+    .data-update-indicator {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: #10b981;
+        margin-left: 8px;
+        opacity: 0;
+    }
+    .data-update-indicator.active {
+        animation: blink 2s ease-in-out;
+    }
+    @keyframes blink {
+        0% { opacity: 0; }
+        25% { opacity: 1; }
+        75% { opacity: 1; }
+        100% { opacity: 0; }
+    }
+    
+    /* Client and topic info styles */
+    .device-info-section {
+        margin-bottom: 15px;
+        padding: 12px;
+        background-color: #f8fafc;
+        border-radius: 6px;
+        border: 1px solid #e2e8f0;
+    }
+    .device-info-title {
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #334155;
+    }
+    .topics-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-top: 5px;
+    }
+    .device-meta {
+        display: flex;
+        align-items: center;
+        margin-bottom: 5px;
+    }
+    .device-meta-label {
+        font-size: 0.8rem;
+        color: #64748b;
+        margin-right: 5px;
+        min-width: 60px;
+    }
+    .device-meta-value {
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: #334155;
+    }
+    
+    /* Data records header */
+    .data-records-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+        padding-bottom: 5px;
+    }
+    
+    /* Export button */
+    .device-export {
+        border-color: #e2e8f0;
+        color: #0369a1;
+        transition: all 0.2s;
+    }
+    .device-export:hover {
+        background-color: #0369a1;
+        border-color: #0369a1;
+        color: white;
+    }
+    
+    /* Badge styling */
+    .device-title .badge {
+        font-weight: 500;
+        background-color: #e0f2fe;
+        color: #0369a1;
+        border: 1px solid #bae6fd;
+    }
+    
+    /* Responsive improvements */
+    @media (max-width: 768px) {
+        .device-stats {
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+        }
+        
+        .stat-item {
+            padding: 8px 4px;
+        }
+        
+        .stat-value {
+            font-size: 0.9rem;
+        }
     }
 </style>
 {% endblock %}
@@ -161,11 +296,12 @@
         {% if device_data %}
             {% for device_id, info in device_data.items() %}
             <div class="col-xl-6">
-                <div class="card device-card">
-                    <div class="card-header bg-light">
+                <div class="card device-card" id="device-{{ device_id }}">
+                    <div class="card-header device-header">
                         <div class="device-title">
                             <h5 class="mb-0">{{ info.device.name }}</h5>
                             <span class="badge bg-info">ID: {{ info.device.id }}</span>
+                            <span class="data-update-indicator"></span>
                         </div>
                     </div>
                     <div class="card-body">
@@ -173,15 +309,15 @@
                         <div class="device-stats mb-3">
                             <div class="stat-item">
                                 <div class="stat-label">Last Seen</div>
-                                <div class="stat-value">{{ info.device.last_seen|default('-', true) }}</div>
+                                <div class="stat-value last-seen-value">{{ info.device.last_seen|default('-', true) }}</div>
                             </div>
                             <div class="stat-item">
                                 <div class="stat-label">Data Points</div>
-                                <div class="stat-value">{{ info.telemetry|length }}</div>
+                                <div class="stat-value data-points-value">{{ info.telemetry|length }}</div>
                             </div>
                             <div class="stat-item">
                                 <div class="stat-label">Last Value</div>
-                                <div class="stat-value">
+                                <div class="stat-value last-value-content">
                                     {% if info.telemetry|length > 0 %}
                                         {% set last_item = info.telemetry|first %}
                                         {% if last_item.payload is string %}
@@ -196,8 +332,40 @@
                             </div>
                         </div>
                         
+                        <!-- Device Info Section -->
+                        <div class="device-info-section">
+                            <div class="device-info-title">Device Information</div>
+                            <div class="device-meta">
+                                <div class="device-meta-label">Client:</div>
+                                <div class="device-meta-value">
+                                    {% for client in clients %}
+                                        {% if client.id == info.device.client_id %}
+                                            <span class="client-badge">{{ client.name }}</span>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="device-meta">
+                                <div class="device-meta-label">Topics:</div>
+                                <div class="topics-container">
+                                    {% set device_topic_ids = [] %}
+                                    {% for item in info.telemetry %}
+                                        {% if item.topic_id not in device_topic_ids %}
+                                            {% set _ = device_topic_ids.append(item.topic_id) %}
+                                        {% endif %}
+                                    {% endfor %}
+                                    
+                                    {% for topic in topics %}
+                                        {% if topic.id in device_topic_ids %}
+                                            <span class="topic-badge badge bg-primary">{{ topic.name }}</span>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        
                         <!-- Data Records Title -->
-                        <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="data-records-header d-flex justify-content-between align-items-center">
                             <h6 class="mb-0">Data Records</h6>
                             <button class="btn btn-sm btn-outline-primary device-export" data-device-id="{{ device_id }}">
                                 <i class="fas fa-download me-1"></i>Export Data
@@ -215,7 +383,7 @@
                                             <th class="payload-column">Payload</th>
                                         </tr>
                                     </thead>
-                                    <tbody class="device-data-body" data-device-id="{{ device_id }}">
+                                    <tbody class="device-data-tbody" data-device-id="{{ device_id }}">
                                         {% for item in info.telemetry %}
                                         <tr class="data-row device-{{ device_id }}-page-{{ (loop.index0 // 5) + 1 }}" {% if loop.index0 >= 5 %}style="display: none;"{% endif %}>
                                             <td>{{ item.timestamp }}</td>
@@ -241,17 +409,17 @@
                                 <nav aria-label="Device data pagination">
                                     <ul class="pagination pagination-sm device-pagination" data-device-id="{{ device_id }}" data-total-pages="{{ (info.telemetry|length / 5)|round(0, 'ceil')|int }}">
                                         <li class="page-item disabled">
-                                            <a class="page-link prev-page" href="#" aria-label="Previous">
+                                            <a class="page-link prev-page" href="javascript:void(0)" aria-label="Previous">
                                                 <span aria-hidden="true">&laquo;</span>
                                             </a>
                                         </li>
                                         {% for i in range(1, (info.telemetry|length / 5)|round(0, 'ceil')|int + 1) %}
                                         <li class="page-item {% if i == 1 %}active{% endif %}">
-                                            <a class="page-link page-number" href="#" data-page="{{ i }}">{{ i }}</a>
+                                            <a class="page-link page-number" href="javascript:void(0)" data-page="{{ i }}">{{ i }}</a>
                                         </li>
                                         {% endfor %}
                                         <li class="page-item {% if info.telemetry|length <= 5 %}disabled{% endif %}">
-                                            <a class="page-link next-page" href="#" aria-label="Next">
+                                            <a class="page-link next-page" href="javascript:void(0)" aria-label="Next">
                                                 <span aria-hidden="true">&raquo;</span>
                                             </a>
                                         </li>
@@ -278,14 +446,16 @@
         <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0">All Data Records</h5>
             {% if data %}
-            <button class="btn btn-sm btn-outline-primary" id="exportCSV">
-                <i class="fas fa-download me-2"></i>Export All CSV
-            </button>
+            <div>
+                <button class="btn btn-sm btn-outline-primary" id="exportCSV">
+                    <i class="fas fa-download me-2"></i>Export All CSV
+                </button>
+            </div>
             {% endif %}
         </div>
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-striped" id="dataTable">
+                <table class="table table-striped" id="all-data-table">
                     <thead>
                         <tr>
                             <th>ID</th>
@@ -295,7 +465,7 @@
                             <th>Payload</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="all-data-tbody">
                         {% for item in data %}
                         <tr class="all-data-row all-data-page-{{ (loop.index0 // 10) + 1 }}" {% if loop.index0 >= 10 %}style="display: none;"{% endif %}>
                             <td>{{ item.id }}</td>
@@ -333,19 +503,19 @@
             {% if data|length > 10 %}
             <div class="d-flex justify-content-center mt-3 pagination-container">
                 <nav aria-label="All data pagination">
-                    <ul class="pagination pagination-sm all-data-pagination" data-total-pages="{{ (data|length / 10)|round(0, 'ceil')|int }}">
+                    <ul class="pagination pagination-sm" id="all-data-pagination">
                         <li class="page-item disabled">
-                            <a class="page-link all-data-prev-page" href="#" aria-label="Previous">
+                            <a class="page-link" href="javascript:void(0)" aria-label="Previous">
                                 <span aria-hidden="true">&laquo;</span>
                             </a>
                         </li>
                         {% for i in range(1, (data|length / 10)|round(0, 'ceil')|int + 1) %}
                         <li class="page-item {% if i == 1 %}active{% endif %}">
-                            <a class="page-link all-data-page-number" href="#" data-page="{{ i }}">{{ i }}</a>
+                            <a class="page-link" href="javascript:void(0)" data-page="{{ i }}">{{ i }}</a>
                         </li>
                         {% endfor %}
                         <li class="page-item {% if data|length <= 10 %}disabled{% endif %}">
-                            <a class="page-link all-data-next-page" href="#" aria-label="Next">
+                            <a class="page-link" href="javascript:void(0)" aria-label="Next">
                                 <span aria-hidden="true">&raquo;</span>
                             </a>
                         </li>
@@ -361,310 +531,505 @@
 {% block extra_js %}
 {% if device_data or data %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Pre-render all telemetry data for CSV export
-    const allTelemetryData = [
-        {% for item in data %}
-        {
-            id: "{{ item.id }}",
-            timestamp: "{{ item.timestamp }}",
-            device_id: "{{ item.device_id }}",
-            topic_id: "{{ item.topic_id }}",
-            payload: {{ item.payload|tojson }}
-        }{% if not loop.last %},{% endif %}
-        {% endfor %}
-    ];
+$(document).ready(function() {
+    // Ensure moment.js is available
+    if (typeof moment === 'undefined') {
+        console.error('Moment.js is not loaded. Loading it now...');
+        // Dynamically load moment.js if not available
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js';
+        script.onload = function() {
+            console.log('Moment.js loaded successfully.');
+            initializeApp();
+        };
+        document.head.appendChild(script);
+    } else {
+        console.log('Moment.js is already loaded.');
+        initializeApp();
+    }
     
-    // Pre-render device-specific telemetry data
-    const deviceData = {
-        {% for device_id, info in device_data.items() %}
-        "{{ device_id }}": {
-            device: {
-                id: "{{ info.device.id }}",
-                name: "{{ info.device.name }}",
-                description: "{{ info.device.description }}",
-                last_seen: "{{ info.device.last_seen }}"
-            },
-            telemetry: [
-                {% for item in info.telemetry %}
-                {
-                    id: "{{ item.id }}",
-                    timestamp: "{{ item.timestamp }}",
-                    device_id: "{{ item.device_id }}",
-                    topic_id: "{{ item.topic_id }}",
-                    payload: {{ item.payload|tojson }}
-                }{% if not loop.last %},{% endif %}
-                {% endfor %}
-            ]
-        }{% if not loop.last %},{% endif %}
-        {% endfor %}
-    };
-    
-    // Device topics mapping
-    const topics = {
-        {% for topic in topics %}
-        "{{ topic.id }}": {
-            id: "{{ topic.id }}",
-            name: "{{ topic.name }}",
-            description: "{{ topic.description }}"
-        }{% if not loop.last %},{% endif %}
-        {% endfor %}
-    };
-    
-    // CSV Export functionality - All data
-    function setupCsvExport() {
-        document.getElementById('exportCSV').addEventListener('click', function() {
-            let csvContent = "data:text/csv;charset=utf-8,";
-            
-            // Add headers
-            csvContent += "ID,Timestamp,Device ID,Topic ID,Payload\n";
-            
-            // Build CSV from all telemetry data
-            allTelemetryData.forEach(item => {
-                try {
-                    let row = [
-                        item.id,
-                        item.timestamp,
-                        item.device_id,
-                        item.topic_id
-                    ];
-                    
-                    // Process payload for CSV
-                    let escapedPayload;
-                    if (typeof item.payload === 'string') {
-                        // If it's already a string, escape it
-                        escapedPayload = item.payload.replace(/"/g, '""');
-                    } else {
-                        // If it's an object, stringify it and escape quotes
-                        escapedPayload = JSON.stringify(item.payload).replace(/"/g, '""');
-                    }
-                    
-                    // Add the escaped payload to the row
-                    row.push(`"${escapedPayload}"`);
-                    csvContent += row.join(',') + "\n";
-                } catch (error) {
-                    console.error("Error preparing CSV data:", error);
-                    csvContent += `${item.id},${item.timestamp},${item.device_id},${item.topic_id},"Error processing payload"\n`;
-                }
-            });
-            
-            // Create download link with filename based on selection and current date
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            
-            // Use server-side rendered filename
-            const filename = "telemetry_data_all_{% if selected_topic %}{{ selected_topic }}{% else %}all{% endif %}_{{ now.strftime('%Y%m%d_%H%M%S') }}.csv";
-            link.setAttribute("download", filename);
-            
-            // Trigger download
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+    // Main application initialization
+    function initializeApp() {
+        // Format timestamps
+        $('.timestamp').each(function() {
+            const timestamp = $(this).text();
+            if (timestamp) {
+                const formattedTime = moment(timestamp).format('YYYY-MM-DD HH:mm:ss');
+                $(this).text(formattedTime);
+            }
         });
         
-        // Device-specific CSV export
-        document.querySelectorAll('.device-export').forEach(button => {
-            button.addEventListener('click', function() {
-                const deviceId = this.getAttribute('data-device-id');
-                if (!deviceData[deviceId]) return;
+        // Initialize config
+        const config = {
+            api: {
+                deviceData: '/api/device_data',
+                latestData: '/api/latest_data'
+            },
+            updateInterval: 1000, // 1 second
+            animationDuration: 2000 // 2 seconds
+        };
+        
+        // Store current data for comparison
+        let currentDeviceData = {};
+        let currentAllData = [];
+        
+        // For pagination tracking
+        const deviceDataMap = new Map();
+        const devicePaginationState = {};
+        let allDataPaginationState = {
+            currentPage: 1,
+            rowsPerPage: 10
+        };
+        
+        // Initialize with current data
+        {% if device_data %}
+        currentDeviceData = {{ device_data|tojson }};
+        {% endif %}
+        
+        {% if data %}
+        currentAllData = {{ data|tojson }};
+        {% endif %}
+        
+        // Initialize device data map for pagination
+        Object.entries(currentDeviceData).forEach(([deviceId, info]) => {
+            deviceDataMap.set(deviceId, info.telemetry);
+        });
+        
+        // Function to update device cards with real-time data
+        async function updateDeviceCards() {
+            try {
+                // Get the current topic filter if any
+                const topicId = {{ selected_topic|default('null', true) }};
                 
+                // Fetch updated device data
+                const response = await fetch(`${config.api.deviceData}?${topicId ? 'topic_id=' + topicId : ''}`);
+                if (!response.ok) throw new Error('Failed to fetch device data');
+                
+                const result = await response.json();
+                const newDeviceData = result.device_data;
+                
+                // Update each device card if there's new data
+                for (const [deviceId, info] of Object.entries(newDeviceData)) {
+                    const deviceCard = $(`#device-${deviceId}`);
+                    
+                    // Check if this is new data
+                    let hasNewData = false;
+                    
+                    // If we have this device already
+                    if (currentDeviceData[deviceId]) {
+                        // Compare telemetry data
+                        if (info.telemetry.length > 0 && 
+                            (!currentDeviceData[deviceId].telemetry.length || 
+                             info.telemetry[0].id !== currentDeviceData[deviceId].telemetry[0].id)) {
+                            hasNewData = true;
+                        }
+                    } else {
+                        // This is a completely new device
+                        hasNewData = true;
+                    }
+                    
+                    if (hasNewData) {
+                        // Activate the update indicator
+                        deviceCard.find('.data-update-indicator').addClass('active');
+                        
+                        // Update the device card content
+                        updateDeviceCardContent(deviceId, info);
+                        
+                        // Remove the active class after animation completes
+                        setTimeout(() => {
+                            deviceCard.find('.data-update-indicator').removeClass('active');
+                        }, config.animationDuration);
+                    }
+                }
+                
+                // Update current data for next comparison
+                currentDeviceData = newDeviceData;
+                
+            } catch (error) {
+                console.error('Error updating device cards:', error);
+            }
+        }
+        
+        // Function to update a specific device card's content
+        function updateDeviceCardContent(deviceId, info) {
+            const deviceCard = $(`#device-${deviceId}`);
+            if (!deviceCard.length) {
+                // If the card doesn't exist yet, we need to create it
+                // This would be a full page reload case, so we'll skip for now
+                return;
+            }
+            
+            // Update last seen
+            deviceCard.find('.last-seen-value').text(info.device.last_seen || '-');
+            
+            // Update data points count
+            deviceCard.find('.data-points-value').text(info.telemetry.length);
+            
+            // Update last value
+            if (info.telemetry.length > 0) {
+                const lastItem = info.telemetry[0];
+                let lastValueText = '';
+                
+                if (typeof lastItem.payload === 'string') {
+                    lastValueText = lastItem.payload;
+                } else {
+                    lastValueText = JSON.stringify(lastItem.payload);
+                }
+                
+                deviceCard.find('.last-value-content').text(lastValueText);
+            }
+            
+            // Store the device's full telemetry data for pagination
+            // This ensures pagination works correctly during real-time updates
+            deviceDataMap.set(deviceId, info.telemetry);
+            
+            // Don't update the table directly during real-time updates
+            // Instead, let the pagination system handle table updates
+            // This preserves the current page state and prevents disappearing records
+            
+            // Update pagination if initialized
+            if (devicePaginationState[deviceId]) {
+                // Refresh pagination while maintaining current page
+                const currentPage = devicePaginationState[deviceId].currentPage;
+                initDevicePagination(deviceId, currentPage);
+            }
+        }
+        
+        // Initialize device data pagination
+        function initDevicePagination(deviceId, preservePage) {
+            const deviceCard = $(`#device-${deviceId}`);
+            if (!deviceCard.length) return;
+            
+            const tableBody = deviceCard.find('.device-data-tbody');
+            const paginationContainer = deviceCard.find('.device-pagination');
+            const rowsPerPage = 5;
+            
+            // Get telemetry data for this device
+            const telemetryData = deviceDataMap.get(deviceId) || [];
+            
+            // Initialize or get pagination state
+            if (!devicePaginationState[deviceId]) {
+                devicePaginationState[deviceId] = {
+                    currentPage: 1,
+                    rowsPerPage: rowsPerPage
+                };
+            }
+            
+            // Use preserved page if specified, otherwise keep current page
+            const currentPage = preservePage || devicePaginationState[deviceId].currentPage;
+            devicePaginationState[deviceId].currentPage = currentPage;
+            
+            // Calculate pagination
+            const totalPages = Math.ceil(telemetryData.length / rowsPerPage);
+            const startIndex = (currentPage - 1) * rowsPerPage;
+            const endIndex = startIndex + rowsPerPage;
+            const displayData = telemetryData.slice(startIndex, endIndex);
+            
+            // Update table with current page data
+            tableBody.empty();
+            displayData.forEach(item => {
+                const timestamp = moment(item.timestamp).format('YYYY-MM-DD HH:mm:ss');
+                const topicName = item.topic_name || 'Unknown';
+                
+                let payloadText = '';
+                if (typeof item.payload === 'string') {
+                    try {
+                        const payloadObj = JSON.parse(item.payload);
+                        payloadText = JSON.stringify(payloadObj, null, 2);
+                    } catch {
+                        payloadText = item.payload;
+                    }
+                } else {
+                    payloadText = JSON.stringify(item.payload, null, 2);
+                }
+                
+                const row = `
+                <tr>
+                    <td class="timestamp-column">${timestamp}</td>
+                    <td class="topic-column">${topicName}</td>
+                    <td class="payload-column payload-cell">
+                        <pre>${payloadText}</pre>
+                    </td>
+                </tr>`;
+                
+                tableBody.append(row);
+            });
+            
+            // Update pagination UI
+            paginationContainer.empty();
+            if (totalPages <= 1) {
+                return; // No pagination needed
+            }
+            
+            // Create pagination controls
+            let paginationHtml = `
+            <ul class="pagination pagination-sm justify-content-center">
+                <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                    <a class="page-link" href="javascript:void(0)" data-page="${currentPage - 1}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>`;
+                
+            // Page numbers
+            for (let i = 1; i <= totalPages; i++) {
+                paginationHtml += `
+                <li class="page-item ${i === currentPage ? 'active' : ''}">
+                    <a class="page-link" href="javascript:void(0)" data-page="${i}">${i}</a>
+                </li>`;
+            }
+            
+            paginationHtml += `
+                <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                    <a class="page-link" href="javascript:void(0)" data-page="${currentPage + 1}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+            </ul>`;
+            
+            paginationContainer.html(paginationHtml);
+            
+            // Add event listeners
+            paginationContainer.find('.page-link').on('click', function(e) {
+                e.preventDefault();
+                const page = parseInt($(this).data('page'));
+                if (page < 1 || page > totalPages) return;
+                
+                // Update state
+                devicePaginationState[deviceId].currentPage = page;
+                
+                // Reinitialize with new page
+                initDevicePagination(deviceId);
+            });
+        }
+        
+        // Function to update the all data table
+        async function updateAllDataTable() {
+            try {
+                // Get the current topic filter if any
+                const topicId = {{ selected_topic|default('null', true) }};
+                
+                // Fetch latest data
+                const response = await fetch(`${config.api.latestData}?limit=100${topicId ? '&topic_id=' + topicId : ''}`);
+                if (!response.ok) throw new Error('Failed to fetch latest data');
+                
+                const result = await response.json();
+                const newData = result.latest_data;
+                
+                // Check if there's new data
+                let hasNewData = false;
+                
+                if (newData.length > 0 && 
+                    (!currentAllData.length || 
+                     newData[0].id !== currentAllData[0].id)) {
+                    hasNewData = true;
+                }
+                
+                if (hasNewData) {
+                    // Activate the update indicator
+                    $('.all-data-indicator').addClass('active');
+                    
+                    // Store the new data
+                    currentAllData = newData;
+                    
+                    // Update the table content while preserving pagination
+                    updateAllDataTableWithPagination();
+                    
+                    // Remove the active class after animation completes
+                    setTimeout(() => {
+                        $('.all-data-indicator').removeClass('active');
+                    }, config.animationDuration);
+                }
+                
+            } catch (error) {
+                console.error('Error updating all data table:', error);
+            }
+        }
+        
+        // Function to update the all data table content with pagination
+        function updateAllDataTableWithPagination() {
+            // Calculate pagination
+            const totalPages = Math.ceil(currentAllData.length / allDataPaginationState.rowsPerPage);
+            const startIndex = (allDataPaginationState.currentPage - 1) * allDataPaginationState.rowsPerPage;
+            const endIndex = startIndex + allDataPaginationState.rowsPerPage;
+            const displayData = currentAllData.slice(startIndex, endIndex);
+            
+            // Update table content
+            updateAllDataTableContent(displayData);
+            
+            // Update pagination UI
+            updateAllDataPaginationUI(totalPages);
+        }
+        
+        // Function to update the all data table content
+        function updateAllDataTableContent(data) {
+            const tableBody = $('#all-data-tbody');
+            if (!tableBody.length) return;
+            
+            // Clear existing rows
+            tableBody.empty();
+            
+            // Add new rows
+            data.forEach(item => {
+                const timestamp = moment(item.timestamp).format('YYYY-MM-DD HH:mm:ss');
+                
+                let payloadText = '';
+                if (typeof item.payload === 'string') {
+                    try {
+                        const payloadObj = JSON.parse(item.payload);
+                        payloadText = JSON.stringify(payloadObj, null, 2);
+                    } catch {
+                        payloadText = item.payload;
+                    }
+                } else {
+                    payloadText = JSON.stringify(item.payload, null, 2);
+                }
+                
+                const row = `
+                <tr>
+                    <td>${item.id}</td>
+                    <td>${timestamp}</td>
+                    <td>${item.device_name || 'Unknown'} (ID: ${item.device_id || 'N/A'})</td>
+                    <td>${item.topic_name || 'Unknown'} (ID: ${item.topic_id || 'N/A'})</td>
+                    <td class="payload-cell">
+                        <pre>${payloadText}</pre>
+                    </td>
+                </tr>`;
+                
+                tableBody.append(row);
+            });
+        }
+        
+        // Function to update pagination UI for all data table
+        function updateAllDataPaginationUI(totalPages) {
+            const paginationContainer = $('#all-data-pagination');
+            if (!paginationContainer.length) return;
+            
+            paginationContainer.empty();
+            
+            if (totalPages <= 1) {
+                return; // No pagination needed
+            }
+            
+            // Create pagination controls
+            let paginationHtml = `
+            <ul class="pagination pagination-sm justify-content-center">
+                <li class="page-item ${allDataPaginationState.currentPage === 1 ? 'disabled' : ''}">
+                    <a class="page-link" href="javascript:void(0)" data-page="${allDataPaginationState.currentPage - 1}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>`;
+                
+            // Page numbers
+            for (let i = 1; i <= totalPages; i++) {
+                paginationHtml += `
+                <li class="page-item ${i === allDataPaginationState.currentPage ? 'active' : ''}">
+                    <a class="page-link" href="javascript:void(0)" data-page="${i}">${i}</a>
+                </li>`;
+            }
+            
+            paginationHtml += `
+                <li class="page-item ${allDataPaginationState.currentPage === totalPages ? 'disabled' : ''}">
+                    <a class="page-link" href="javascript:void(0)" data-page="${allDataPaginationState.currentPage + 1}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+            </ul>`;
+            
+            paginationContainer.html(paginationHtml);
+        }
+        
+        // Initialize all data pagination
+        function initAllDataPagination() {
+            $('#all-data-pagination').on('click', 'a.page-link', function(e) {
+                e.preventDefault();  // Prevent page jump
+                const page = parseInt($(this).data('page'));
+                
+                // Validate page number
+                const totalPages = Math.ceil(currentAllData.length / allDataPaginationState.rowsPerPage);
+                if (page < 1 || page > totalPages) return;
+                
+                // Update state
+                allDataPaginationState.currentPage = page;
+                
+                // Update display
+                updateAllDataTableWithPagination();
+            });
+            
+            // Initial pagination setup
+            updateAllDataTableWithPagination();
+        }
+        
+        // Start real-time updates
+        setInterval(updateDeviceCards, config.updateInterval);
+        setInterval(updateAllDataTable, config.updateInterval);
+        
+        // CSV Export functionality
+        function setupCsvExport() {
+            $('.export-csv-btn').on('click', function() {
+                const targetTable = $(this).data('target');
+                const filename = $(this).data('filename');
+                
+                // Get table data
+                const rows = [];
+                const headers = [];
+                
+                // Get headers
+                $(`${targetTable} thead th`).each(function() {
+                    headers.push($(this).text().trim());
+                });
+                rows.push(headers);
+                
+                // Get data rows
+                $(`${targetTable} tbody tr`).each(function() {
+                    const row = [];
+                    $(this).find('td').each(function() {
+                        // For payload cells with pre tags, get the text content
+                        if ($(this).hasClass('payload-cell')) {
+                            row.push($(this).find('pre').text().trim());
+                        } else {
+                            row.push($(this).text().trim());
+                        }
+                    });
+                    rows.push(row);
+                });
+                
+                // Convert to CSV
                 let csvContent = "data:text/csv;charset=utf-8,";
                 
-                // Add headers
-                csvContent += "ID,Timestamp,Device ID,Topic ID,Payload\n";
-                
-                // Build CSV from device-specific telemetry data
-                deviceData[deviceId].telemetry.forEach(item => {
-                    try {
-                        let row = [
-                            item.id,
-                            item.timestamp,
-                            item.device_id,
-                            item.topic_id
-                        ];
-                        
-                        // Process payload for CSV
-                        let escapedPayload;
-                        if (typeof item.payload === 'string') {
-                            // If it's already a string, escape it
-                            escapedPayload = item.payload.replace(/"/g, '""');
-                        } else {
-                            // If it's an object, stringify it and escape quotes
-                            escapedPayload = JSON.stringify(item.payload).replace(/"/g, '""');
+                rows.forEach(function(rowArray) {
+                    const row = rowArray.map(function(cell) {
+                        // Escape quotes and wrap in quotes if contains comma
+                        if (cell.includes(',') || cell.includes('"') || cell.includes('\n')) {
+                            return '"' + cell.replace(/"/g, '""') + '"';
                         }
-                        
-                        // Add the escaped payload to the row
-                        row.push(`"${escapedPayload}"`);
-                        csvContent += row.join(',') + "\n";
-                    } catch (error) {
-                        console.error("Error preparing CSV data:", error);
-                        csvContent += `${item.id},${item.timestamp},${item.device_id},${item.topic_id},"Error processing payload"\n`;
-                    }
+                        return cell;
+                    }).join(",");
+                    csvContent += row + "\r\n";
                 });
                 
                 // Create download link
                 const encodedUri = encodeURI(csvContent);
                 const link = document.createElement("a");
                 link.setAttribute("href", encodedUri);
-                
-                // Device-specific filename
-                let deviceName = deviceData[deviceId].device.name;
-                deviceName = deviceName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-                const filename = `telemetry_${deviceName}_{{ now.strftime('%Y%m%d_%H%M%S') }}.csv`;
                 link.setAttribute("download", filename);
-                
-                // Trigger download
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
             });
+        }
+        
+        // Initialize export
+        setupCsvExport();
+        
+        // Initialize pagination
+        // Call for each device card
+        Object.keys(currentDeviceData).forEach(deviceId => {
+            initDevicePagination(deviceId);
         });
+        
+        // Initialize all data pagination
+        initAllDataPagination();
     }
-    
-    // Initialize export
-    setupCsvExport();
-    
-    // Initialize device data pagination
-    function initDevicePagination() {
-        // Handle page number clicks
-        $('.device-pagination .page-number').on('click', function(e) {
-            e.preventDefault();
-            
-            const deviceId = $(this).closest('.device-pagination').data('device-id');
-            const pageNum = $(this).data('page');
-            
-            // Hide all rows for this device
-            $(`.device-data-body[data-device-id="${deviceId}"] .data-row`).hide();
-            
-            // Show only rows for the selected page
-            $(`.device-${deviceId}-page-${pageNum}`).show();
-            
-            // Update active page
-            $(this).closest('.device-pagination').find('.page-item').removeClass('active');
-            $(this).parent('.page-item').addClass('active');
-            
-            // Update prev/next buttons
-            const totalPages = $(this).closest('.device-pagination').data('total-pages');
-            
-            if (pageNum === 1) {
-                $(this).closest('.device-pagination').find('.prev-page').parent('.page-item').addClass('disabled');
-            } else {
-                $(this).closest('.device-pagination').find('.prev-page').parent('.page-item').removeClass('disabled');
-            }
-            
-            if (pageNum === totalPages) {
-                $(this).closest('.device-pagination').find('.next-page').parent('.page-item').addClass('disabled');
-            } else {
-                $(this).closest('.device-pagination').find('.next-page').parent('.page-item').removeClass('disabled');
-            }
-        });
-        
-        // Handle previous page button
-        $('.device-pagination .prev-page').on('click', function(e) {
-            e.preventDefault();
-            
-            if ($(this).parent('.page-item').hasClass('disabled')) {
-                return;
-            }
-            
-            const activePage = $(this).closest('.device-pagination').find('.page-item.active');
-            const prevPage = activePage.prev('.page-item').find('.page-number');
-            
-            if (prevPage.length) {
-                prevPage.trigger('click');
-            }
-        });
-        
-        // Handle next page button
-        $('.device-pagination .next-page').on('click', function(e) {
-            e.preventDefault();
-            
-            if ($(this).parent('.page-item').hasClass('disabled')) {
-                return;
-            }
-            
-            const activePage = $(this).closest('.device-pagination').find('.page-item.active');
-            const nextPage = activePage.next('.page-item').find('.page-number');
-            
-            if (nextPage.length) {
-                nextPage.trigger('click');
-            }
-        });
-    }
-    
-    // Initialize pagination
-    initDevicePagination();
-    
-    // Initialize all data pagination
-    function initAllDataPagination() {
-        // Handle page number clicks
-        $('.all-data-pagination .all-data-page-number').on('click', function(e) {
-            e.preventDefault();
-            
-            const pageNum = $(this).data('page');
-            
-            // Hide all rows
-            $('.all-data-row').hide();
-            
-            // Show only rows for the selected page
-            $(`.all-data-page-${pageNum}`).show();
-            
-            // Update active page
-            $(this).closest('.all-data-pagination').find('.page-item').removeClass('active');
-            $(this).parent('.page-item').addClass('active');
-            
-            // Update prev/next buttons
-            const totalPages = $(this).closest('.all-data-pagination').data('total-pages');
-            
-            if (pageNum === 1) {
-                $(this).closest('.all-data-pagination').find('.all-data-prev-page').parent('.page-item').addClass('disabled');
-            } else {
-                $(this).closest('.all-data-pagination').find('.all-data-prev-page').parent('.page-item').removeClass('disabled');
-            }
-            
-            if (pageNum === totalPages) {
-                $(this).closest('.all-data-pagination').find('.all-data-next-page').parent('.page-item').addClass('disabled');
-            } else {
-                $(this).closest('.all-data-pagination').find('.all-data-next-page').parent('.page-item').removeClass('disabled');
-            }
-        });
-        
-        // Handle previous page button
-        $('.all-data-pagination .all-data-prev-page').on('click', function(e) {
-            e.preventDefault();
-            
-            if ($(this).parent('.page-item').hasClass('disabled')) {
-                return;
-            }
-            
-            const activePage = $(this).closest('.all-data-pagination').find('.page-item.active');
-            const prevPage = activePage.prev('.page-item').find('.all-data-page-number');
-            
-            if (prevPage.length) {
-                prevPage.trigger('click');
-            }
-        });
-        
-        // Handle next page button
-        $('.all-data-pagination .all-data-next-page').on('click', function(e) {
-            e.preventDefault();
-            
-            if ($(this).parent('.page-item').hasClass('disabled')) {
-                return;
-            }
-            
-            const activePage = $(this).closest('.all-data-pagination').find('.page-item.active');
-            const nextPage = activePage.next('.page-item').find('.all-data-page-number');
-            
-            if (nextPage.length) {
-                nextPage.trigger('click');
-            }
-        });
-    }
-    
-    // Initialize all data pagination
-    initAllDataPagination();
 });
 </script>
 {% endif %}
