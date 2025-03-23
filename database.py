@@ -388,20 +388,30 @@ def store_telemetry_data(device_id, topic_id, payload):
 def get_telemetry_data(device_id=None, topic_id=None, limit=100):
     """Get telemetry data, optionally filtered by device_id and/or topic_id."""
     conn = get_db_connection()
-    query = 'SELECT * FROM telemetry_data'
+    
+    # Modified query to join with devices and topics tables
+    query = '''
+        SELECT 
+            td.id, td.device_id, td.topic_id, td.payload, td.timestamp,
+            d.name as device_name, t.name as topic_name
+        FROM telemetry_data td
+        LEFT JOIN devices d ON td.device_id = d.id
+        LEFT JOIN topics t ON td.topic_id = t.id
+    '''
+    
     params = []
     
     if device_id and topic_id:
-        query += ' WHERE device_id = ? AND topic_id = ?'
+        query += ' WHERE td.device_id = ? AND td.topic_id = ?'
         params.extend([device_id, topic_id])
     elif device_id:
-        query += ' WHERE device_id = ?'
+        query += ' WHERE td.device_id = ?'
         params.append(device_id)
     elif topic_id:
-        query += ' WHERE topic_id = ?'
+        query += ' WHERE td.topic_id = ?'
         params.append(topic_id)
     
-    query += ' ORDER BY timestamp DESC LIMIT ?'
+    query += ' ORDER BY td.timestamp DESC LIMIT ?'
     params.append(limit)
     
     data = conn.execute(query, params).fetchall()

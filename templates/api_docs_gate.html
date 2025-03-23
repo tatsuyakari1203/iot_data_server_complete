@@ -1,0 +1,352 @@
+{% extends "base.html" %}
+
+{% block title %}API Documentation{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <div class="row">
+        <!-- Sidebar Navigation -->
+        <div class="col-md-3 col-lg-2 d-md-block bg-light sidebar">
+            <div class="position-sticky pt-3">
+                <h5 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1">
+                    <span>API Documentation</span>
+                </h5>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-md-path="overview/overview.md">
+                            <i class="fas fa-info-circle me-2"></i>Overview
+                        </a>
+                    </li>
+                </ul>
+
+                <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1">
+                    <span>MQTT Protocol</span>
+                </h6>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-md-path="mqtt/connection.md">
+                            <i class="fas fa-plug me-2"></i>Connection Details
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-md-path="mqtt/topics.md">
+                            <i class="fas fa-list me-2"></i>Topics
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-md-path="mqtt/payload.md">
+                            <i class="fas fa-file-code me-2"></i>Payload Format
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-md-path="mqtt/example.md">
+                            <i class="fas fa-code me-2"></i>Example Code
+                        </a>
+                    </li>
+                </ul>
+
+                <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1">
+                    <span>HTTP REST API</span>
+                </h6>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-md-path="http/auth.md">
+                            <i class="fas fa-key me-2"></i>Authentication
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-md-path="http/publish.md">
+                            <i class="fas fa-cloud-upload-alt me-2"></i>Publish Data
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-md-path="http/topics.md">
+                            <i class="fas fa-list-alt me-2"></i>Get Topics
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-md-path="http/devices.md">
+                            <i class="fas fa-microchip me-2"></i>Get Devices
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-md-path="http/data.md">
+                            <i class="fas fa-database me-2"></i>Get Telemetry Data
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-md-path="http/example.md">
+                            <i class="fas fa-code me-2"></i>Example Code
+                        </a>
+                    </li>
+                </ul>
+
+                <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1">
+                    <span>Web Application Examples</span>
+                </h6>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-md-path="examples/web/python_flask.md">
+                            <i class="fab fa-python me-2"></i>Python (Flask)
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-md-path="examples/web/nodejs_express.md">
+                            <i class="fab fa-node-js me-2"></i>Node.js (Express)
+                        </a>
+                    </li>
+                </ul>
+
+                <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1">
+                    <span>Mobile App Examples</span>
+                </h6>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-md-path="examples/mobile/flutter.md">
+                            <i class="fas fa-mobile-alt me-2"></i>Flutter
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Main content -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2" id="content-title">API Documentation</h1>
+            </div>
+            <div id="markdown-content" class="markdown-body mb-5">
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading documentation...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Include Marked.js for Markdown parsing -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<!-- Include Highlight.js for code syntax highlighting -->
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.7.0/build/highlight.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.7.0/build/styles/github.min.css">
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set up marked.js with highlight.js for code highlighting
+    marked.setOptions({
+        highlight: function(code, lang) {
+            if (lang && hljs.getLanguage(lang)) {
+                try {
+                    return hljs.highlight(code, { language: lang }).value;
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+            return hljs.highlightAuto(code).value;
+        },
+        breaks: true,
+        gfm: true
+    });
+
+    // Function to load markdown content
+    function loadMarkdownContent(mdPath) {
+        const contentElement = document.getElementById('markdown-content');
+        const titleElement = document.getElementById('content-title');
+        
+        // Show loading indicator
+        contentElement.innerHTML = `
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Loading documentation...</p>
+            </div>
+        `;
+        
+        // Load markdown file
+        fetch(`/static/md/${mdPath}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.text();
+            })
+            .then(markdown => {
+                // Extract first heading as title
+                const titleMatch = markdown.match(/^# (.*?)$/m);
+                if (titleMatch && titleMatch[1]) {
+                    titleElement.textContent = titleMatch[1];
+                }
+                
+                // Convert markdown to HTML and render
+                const html = marked.parse(markdown);
+                contentElement.innerHTML = html;
+                
+                // Apply syntax highlighting to code blocks
+                document.querySelectorAll('pre code').forEach((block) => {
+                    hljs.highlightBlock(block);
+                });
+                
+                // Update URL hash for deep linking
+                window.location.hash = mdPath;
+            })
+            .catch(error => {
+                console.error('Error loading markdown:', error);
+                contentElement.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Failed to load documentation: ${error.message}
+                    </div>
+                `;
+            });
+    }
+    
+    // Handle navigation clicks
+    document.querySelectorAll('a[data-md-path]').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Highlight active link
+            document.querySelectorAll('.nav-link').forEach(el => {
+                el.classList.remove('active');
+            });
+            this.classList.add('active');
+            
+            // Load content
+            loadMarkdownContent(this.getAttribute('data-md-path'));
+        });
+    });
+    
+    // Handle deep linking via URL hash
+    function handleHashChange() {
+        const hash = window.location.hash.substring(1);
+        if (hash) {
+            const link = document.querySelector(`a[data-md-path="${hash}"]`);
+            if (link) {
+                link.click();
+            } else {
+                // Default to first link if hash doesn't match any link
+                loadMarkdownContent('overview/overview.md');
+            }
+        } else {
+            // Default to first link if no hash
+            loadMarkdownContent('overview/overview.md');
+        }
+    }
+    
+    window.addEventListener('hashchange', handleHashChange);
+    
+    // Load initial content
+    handleHashChange();
+    
+    // If no hash, click the first link
+    if (!window.location.hash) {
+        document.querySelector('a[data-md-path]').click();
+    }
+});
+
+// Add custom styles for markdown content
+document.head.insertAdjacentHTML('beforeend', `
+    <style>
+        .markdown-body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            font-size: 16px;
+            line-height: 1.6;
+            word-wrap: break-word;
+        }
+        .markdown-body h1, 
+        .markdown-body h2,
+        .markdown-body h3,
+        .markdown-body h4,
+        .markdown-body h5,
+        .markdown-body h6 {
+            margin-top: 24px;
+            margin-bottom: 16px;
+            font-weight: 600;
+            line-height: 1.25;
+        }
+        .markdown-body h1 {
+            font-size: 2em;
+            border-bottom: 1px solid #eaecef;
+            padding-bottom: 0.3em;
+        }
+        .markdown-body h2 {
+            font-size: 1.5em;
+            border-bottom: 1px solid #eaecef;
+            padding-bottom: 0.3em;
+        }
+        .markdown-body pre {
+            padding: 16px;
+            overflow: auto;
+            font-size: 85%;
+            line-height: 1.45;
+            background-color: #f6f8fa;
+            border-radius: 3px;
+        }
+        .markdown-body code {
+            padding: 0.2em 0.4em;
+            margin: 0;
+            font-size: 85%;
+            background-color: rgba(27,31,35,0.05);
+            border-radius: 3px;
+        }
+        .markdown-body pre > code {
+            padding: 0;
+            background-color: transparent;
+        }
+        .markdown-body table {
+            display: block;
+            width: 100%;
+            overflow: auto;
+            margin-top: 0;
+            margin-bottom: 16px;
+            border-spacing: 0;
+            border-collapse: collapse;
+        }
+        .markdown-body table th,
+        .markdown-body table td {
+            padding: 6px 13px;
+            border: 1px solid #dfe2e5;
+        }
+        .markdown-body table tr {
+            background-color: #fff;
+            border-top: 1px solid #c6cbd1;
+        }
+        .markdown-body table tr:nth-child(2n) {
+            background-color: #f6f8fa;
+        }
+        .sidebar {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 100;
+            padding: 48px 0 0;
+            box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+            overflow-y: auto;
+        }
+        @media (max-width: 767.98px) {
+            .sidebar {
+                position: static;
+                padding-top: 0;
+            }
+        }
+        .sidebar-heading {
+            font-size: .75rem;
+            text-transform: uppercase;
+            color: #6c757d;
+        }
+        .nav-link {
+            font-weight: 500;
+            color: #333;
+        }
+        .nav-link.active {
+            color: #007bff;
+        }
+    </style>
+`);
+</script>
+{% endblock %}

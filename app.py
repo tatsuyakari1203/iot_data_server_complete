@@ -242,7 +242,7 @@ def data():
 # API documentation
 @app.route('/api_docs')
 def api_docs():
-    return render_template('api_docs.html')
+    return render_template('api_docs_gate.html')
 
 @app.route('/about')
 def about():

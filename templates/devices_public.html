@@ -98,6 +98,71 @@
         color: #007bff;
         margin-bottom: 1rem;
     }
+    .markdown-body {
+        padding: 20px;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+        line-height: 1.6;
+    }
+    .markdown-body h1, 
+    .markdown-body h2,
+    .markdown-body h3,
+    .markdown-body h4,
+    .markdown-body h5,
+    .markdown-body h6 {
+        margin-top: 24px;
+        margin-bottom: 16px;
+        font-weight: 600;
+        line-height: 1.25;
+    }
+    .markdown-body h1 {
+        font-size: 2em;
+        border-bottom: 1px solid #eaecef;
+        padding-bottom: 0.3em;
+    }
+    .markdown-body h2 {
+        font-size: 1.5em;
+        border-bottom: 1px solid #eaecef;
+        padding-bottom: 0.3em;
+    }
+    .markdown-body pre {
+        background-color: #f6f8fa;
+        border-radius: 3px;
+        font-size: 85%;
+        line-height: 1.45;
+        overflow: auto;
+        padding: 16px;
+    }
+    .markdown-body code {
+        background-color: rgba(27,31,35,.05);
+        border-radius: 3px;
+        font-size: 85%;
+        margin: 0;
+        padding: 0.2em 0.4em;
+    }
+    .markdown-body pre > code {
+        background-color: transparent;
+        padding: 0;
+    }
+    .markdown-body table {
+        display: block;
+        width: 100%;
+        overflow: auto;
+        border-spacing: 0;
+        border-collapse: collapse;
+        margin-bottom: 16px;
+    }
+    .markdown-body table th,
+    .markdown-body table td {
+        padding: 6px 13px;
+        border: 1px solid #dfe2e5;
+    }
+    .markdown-body table tr {
+        background-color: #fff;
+        border-top: 1px solid #c6cbd1;
+    }
+    .markdown-body table tr:nth-child(2n) {
+        background-color: #f6f8fa;
+    }
 </style>
 {% endblock %}
 
@@ -145,13 +210,15 @@
             <ul class="nav nav-tabs" id="connectionTabs" role="tablist">
                 <li class="nav-item" role="presentation">
                     <button class="nav-link active" id="mqtt-tab" data-bs-toggle="tab" data-bs-target="#mqtt-content" 
-                           type="button" role="tab" aria-controls="mqtt-content" aria-selected="true">
+                           type="button" role="tab" aria-controls="mqtt-content" aria-selected="true"
+                           data-md-path="devices/mqtt_connection.md">
                         <i class="fas fa-broadcast-tower me-1"></i> MQTT Connection
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="http-tab" data-bs-toggle="tab" data-bs-target="#http-content" 
-                           type="button" role="tab" aria-controls="http-content" aria-selected="false">
+                           type="button" role="tab" aria-controls="http-content" aria-selected="false"
+                           data-md-path="devices/http_connection.md">
                         <i class="fas fa-globe me-1"></i> HTTP Connection
                     </button>
                 </li>
@@ -161,351 +228,195 @@
             <div class="tab-content" id="connectionTabsContent">
                 <!-- MQTT Connection Tab -->
                 <div class="tab-pane fade show active" id="mqtt-content" role="tabpanel" aria-labelledby="mqtt-tab">
-                    <div class="row">
-                        <div class="col-lg-5 mb-4">
-                            <div class="card connection-card">
-                                <div class="card-header">
-                                    <h6 class="mb-0">
-                                        <i class="fas fa-cog me-2"></i>MQTT Broker Settings
-                                    </h6>
-                                </div>
-                                <div class="card-body">
-                                    <ul class="list-unstyled setting-list">
-                                        <li>
-                                            <span class="setting-key">Broker Host:</span> 
-                                            <span class="setting-value">{{ request.host.split(':')[0] }}</span>
-                                        </li>
-                                        <li>
-                                            <span class="setting-key">Broker Port:</span> 
-                                            <span class="setting-value">1883</span>
-                                        </li>
-                                        <li>
-                                            <span class="setting-key">Broker Username:</span> 
-                                            <span class="setting-value">admin</span>
-                                            <span class="setting-note">Optional, depends on broker configuration</span>
-                                        </li>
-                                        <li>
-                                            <span class="setting-key">Broker Password:</span> 
-                                            <span class="setting-value">admin</span>
-                                            <span class="setting-note">Optional, depends on broker configuration</span>
-                                        </li>
-                                        <li>
-                                            <span class="setting-key">Topic Format:</span> 
-                                            <span class="setting-value">device_name/topic_name</span>
-                                            <span class="setting-note">For example: esp8266_1/temperature</span>
-                                        </li>
-                                        <li>
-                                            <span class="setting-key">API Key:</span> 
-                                            <span class="setting-value badge bg-danger">Required</span>
-                                            <span class="setting-note">Must be included in every JSON payload</span>
-                                        </li>
-                                    </ul>
-                                </div>
-                            </div>
-                            
-                            <div class="alert alert-info mt-4">
-                                <div class="d-flex">
-                                    <div class="me-3">
-                                        <i class="fas fa-info-circle fa-2x"></i>
-                                    </div>
-                                    <div>
-                                        <h6 class="alert-heading">API Key Required</h6>
-                                        <p class="mb-0">Your API key must be included in every message payload sent to the broker.</p>
-                                        <p>You can get an API key after creating an account and logging in.</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="col-lg-7">
-                            <h6><i class="fas fa-exchange-alt me-2"></i>Connection Process</h6>
-                            <div class="connection-steps mb-4">
-                                <div class="step">
-                                    <div class="step-number">1</div>
-                                    <div class="step-content">
-                                        <h6>Connect to MQTT Broker</h6>
-                                        <p>Connect to the broker using its host, port, and authentication credentials if required.</p>
-                                    </div>
-                                </div>
-                                <div class="step">
-                                    <div class="step-number">2</div>
-                                    <div class="step-content">
-                                        <h6>Format Your Topic</h6>
-                                        <p>Create a topic using the format <code>device_name/topic_name</code>, for example <code>esp8266_1/temperature</code>.</p>
-                                    </div>
-                                </div>
-                                <div class="step">
-                                    <div class="step-number">3</div>
-                                    <div class="step-content">
-                                        <h6>Include API Key in Payload</h6>
-                                        <p>Add your API key to the JSON payload to authenticate your device:</p>
-                                        <pre><code class="json">{
-  "api_key": "YOUR_API_KEY", 
-  "value": 25.5,
-  "unit": "celsius",
-  "timestamp": 1679808754
-}</code></pre>
-                                    </div>
-                                </div>
-                                <div class="step">
-                                    <div class="step-number">4</div>
-                                    <div class="step-content">
-                                        <h6>Publish Messages</h6>
-                                        <p>Send your data to the topic and the server will process it automatically.</p>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <h6 class="mt-4"><i class="fas fa-code me-2"></i>Example Arduino/ESP8266 Code</h6>
-                            <div class="code-block">
-                                <pre><code>#include &lt;ESP8266WiFi.h&gt;
-#include &lt;PubSubClient.h&gt;
-#include &lt;ArduinoJson.h&gt;
-
-// WiFi settings
-const char* ssid = "YOUR_WIFI_SSID";
-const char* password = "YOUR_WIFI_PASSWORD";
-
-// MQTT broker settings
-const char* mqtt_server = "{{ request.host.split(':')[0] }}";
-const int mqtt_port = 1883;
-const char* mqtt_username = "admin";
-const char* mqtt_password = "admin";
-
-// API and device settings
-const char* api_key = "YOUR_API_KEY"; // Your API key from the clients page
-const char* device_name = "esp8266_1";
-const char* topic_name = "temperature";
-
-WiFiClient espClient;
-PubSubClient client(espClient);
-
-void setup() {
-  Serial.begin(115200);
-  // Connect to Wi-Fi
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println("WiFi connected");
-  
-  // Connect to MQTT
-  client.setServer(mqtt_server, mqtt_port);
-}
-
-void loop() {
-  if (!client.connected()) {
-    reconnect();
-  }
-  client.loop();
-  
-  // Read sensor data
-  float temp = 25.5; // Replace with actual sensor reading
-  
-  // Create full topic (device_name/topic_name)
-  String topic = String(device_name) + "/" + String(topic_name);
-  
-  // Create JSON payload WITH API key
-  StaticJsonDocument&lt;200&gt; doc;
-  doc["api_key"] = api_key; // API key must be included in every message
-  doc["value"] = temp;
-  doc["unit"] = "celsius";
-  doc["timestamp"] = millis();
-  
-  char jsonBuffer[256];
-  serializeJson(doc, jsonBuffer);
-  
-  // Publish to MQTT
-  Serial.print("Publishing to topic: ");
-  Serial.println(topic);
-  Serial.print("Payload: ");
-  Serial.println(jsonBuffer);
-  
-  client.publish(topic.c_str(), jsonBuffer);
-  delay(5000);
-}
-
-void reconnect() {
-  // Loop until we're reconnected
-  while (!client.connected()) {
-    Serial.print("Attempting MQTT connection...");
-    // Create a client ID
-    String clientId = "ESP8266Client-";
-    clientId += String(random(0xffff), HEX);
-    
-    // Attempt to connect with username/password
-    if (client.connect(clientId.c_str(), mqtt_username, mqtt_password)) {
-      Serial.println("connected");
-    } else {
-      Serial.print("failed, rc=");
-      Serial.print(client.state());
-      Serial.println(" try again in 5 seconds");
-      delay(5000);
-    }
-  }
-}</code></pre>
-                            </div>
-                        </div>
-                    </div>
+                    <div id="mqtt-markdown-content" class="markdown-body"></div>
                 </div>
-                
+
                 <!-- HTTP Connection Tab -->
                 <div class="tab-pane fade" id="http-content" role="tabpanel" aria-labelledby="http-tab">
-                    <div class="row">
-                        <div class="col-lg-5 mb-4">
-                            <div class="card connection-card">
-                                <div class="card-header">
-                                    <h6 class="mb-0">
-                                        <i class="fas fa-cog me-2"></i>HTTP API Settings
-                                    </h6>
-                                </div>
-                                <div class="card-body">
-                                    <ul class="list-unstyled setting-list">
-                                        <li>
-                                            <span class="setting-key">API Endpoint:</span> 
-                                            <span class="setting-value">http://{{ request.host }}/api/publish</span>
-                                        </li>
-                                        <li>
-                                            <span class="setting-key">Method:</span> 
-                                            <span class="setting-value">POST</span>
-                                        </li>
-                                        <li>
-                                            <span class="setting-key">Content Type:</span> 
-                                            <span class="setting-value">application/json</span>
-                                        </li>
-                                        <li>
-                                            <span class="setting-key">API Key:</span> 
-                                            <span class="setting-value badge bg-danger">Required</span>
-                                            <span class="setting-note">Must be included in the JSON body</span>
-                                        </li>
-                                    </ul>
-                                </div>
-                            </div>
-                            
-                            <div class="card connection-card mt-4">
-                                <div class="card-header">
-                                    <h6 class="mb-0">
-                                        <i class="fas fa-shield-alt me-2"></i>API Key Importance
-                                    </h6>
-                                </div>
-                                <div class="card-body">
-                                    <p>The API key provides authentication and authorization for your devices. It should be:</p>
-                                    <ul>
-                                        <li>Obtained after creating an account and logging in</li>
-                                        <li>Included in every HTTP request</li>
-                                        <li>Kept secure and not shared with unauthorized parties</li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="col-lg-7">
-                            <h6><i class="fas fa-exchange-alt me-2"></i>Connection Process</h6>
-                            <div class="connection-steps mb-4">
-                                <div class="step">
-                                    <div class="step-number">1</div>
-                                    <div class="step-content">
-                                        <h6>Prepare JSON Payload</h6>
-                                        <p>Include device_name, topic_name, api_key and your data:</p>
-                                        <pre><code class="json">{
-  "api_key": "YOUR_API_KEY",
-  "device_name": "esp8266_1",
-  "topic_name": "temperature",
-  "value": 25.5,
-  "unit": "celsius",
-  "timestamp": 1679808754
-}</code></pre>
-                                    </div>
-                                </div>
-                                <div class="step">
-                                    <div class="step-number">2</div>
-                                    <div class="step-content">
-                                        <h6>Send HTTP POST Request</h6>
-                                        <p>Send the payload to the API endpoint <code>http://{{ request.host }}/api/publish</code></p>
-                                    </div>
-                                </div>
-                                <div class="step">
-                                    <div class="step-number">3</div>
-                                    <div class="step-content">
-                                        <h6>Process Response</h6>
-                                        <p>Check the HTTP status code for success (200) or error information.</p>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <h6 class="mt-4"><i class="fas fa-code me-2"></i>Example Arduino/ESP8266 Code</h6>
-                            <div class="code-block">
-                                <pre><code>#include &lt;ESP8266WiFi.h&gt;
-#include &lt;ESP8266HTTPClient.h&gt;
-#include &lt;ArduinoJson.h&gt;
-
-// WiFi settings
-const char* ssid = "YOUR_WIFI_SSID";
-const char* password = "YOUR_WIFI_PASSWORD";
-
-// Server and API settings
-const char* server_url = "http://{{ request.host }}/api/publish";
-const char* api_key = "YOUR_API_KEY"; // Your API key from the clients page
-const char* device_name = "esp8266_1";
-const char* topic_name = "temperature";
-
-void setup() {
-  Serial.begin(115200);
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println("WiFi connected");
-}
-
-void loop() {
-  if (WiFi.status() == WL_CONNECTED) {
-    // Read sensor data
-    float temp = 25.5; // Replace with actual sensor reading
-    
-    // Prepare JSON payload WITH API key
-    StaticJsonDocument&lt;200&gt; doc;
-    doc["api_key"] = api_key; // API key must be included in every request
-    doc["device_name"] = device_name;
-    doc["topic_name"] = topic_name;
-    doc["value"] = temp;
-    doc["unit"] = "celsius";
-    doc["timestamp"] = millis();
-    
-    char jsonBuffer[256];
-    serializeJson(doc, jsonBuffer);
-    
-    HTTPClient http;
-    WiFiClient client;
-    http.begin(client, server_url);
-    http.addHeader("Content-Type", "application/json");
-    
-    // Send HTTP POST request
-    int httpResponseCode = http.POST(jsonBuffer);
-    Serial.print("HTTP Response code: ");
-    Serial.println(httpResponseCode);
-    
-    http.end();
-  }
-  delay(5000);
-}</code></pre>
-                            </div>
-                        </div>
-                    </div>
+                    <div id="http-markdown-content" class="markdown-body"></div>
                 </div>
             </div>
         </div>
     </div>
-    
-    <div class="text-center mt-4 mb-4">
-        <a href="{{ url_for('api_docs') }}" class="btn btn-primary">
-            <i class="fas fa-code me-2"></i>Xem tài liệu API
-        </a>
-        <a href="{{ url_for('login') }}" class="btn btn-outline-primary ms-2">
-            <i class="fas fa-sign-in-alt me-2"></i>Đăng nhập
-        </a>
-    </div>
 </div>
+
+<!-- Include Marked.js for Markdown parsing -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<!-- Include Highlight.js for code syntax highlighting -->
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.7.0/build/highlight.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.7.0/build/styles/github.min.css">
+
+<script>
+    // Set up marked.js with highlight.js for code highlighting
+    marked.setOptions({
+        highlight: function(code, lang) {
+            if (lang && hljs.getLanguage(lang)) {
+                try {
+                    return hljs.highlight(code, { language: lang }).value;
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+            return hljs.highlightAuto(code).value;
+        },
+        breaks: true,
+        gfm: true
+    });
+
+    // Function to load markdown content
+    function loadMarkdownContent(mdPath, targetElement) {
+        const contentElement = document.getElementById(targetElement);
+        
+        // Show loading indicator
+        contentElement.innerHTML = `
+            <div class="text-center my-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Loading documentation...</p>
+            </div>
+        `;
+        
+        // Load markdown file
+        fetch(`/static/md/${mdPath}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.text();
+            })
+            .then(markdown => {
+                // Convert markdown to HTML and render
+                const html = marked.parse(markdown);
+                contentElement.innerHTML = html;
+                
+                // Apply syntax highlighting to code blocks
+                contentElement.querySelectorAll('pre code').forEach((block) => {
+                    hljs.highlightBlock(block);
+                });
+                
+                // Update any server IP references in the content
+                const serverHost = window.location.hostname;
+                const codeElements = contentElement.querySelectorAll('code');
+                codeElements.forEach(el => {
+                    el.innerHTML = el.innerHTML.replace(/YOUR_SERVER_IP/g, serverHost);
+                });
+            })
+            .catch(error => {
+                console.error('Error loading markdown:', error);
+                contentElement.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Error loading documentation. Please try again later.
+                    </div>
+                `;
+            });
+    }
+    
+    // Load content when tabs are clicked
+    document.querySelectorAll('#connectionTabs button[data-bs-toggle="tab"]').forEach(tab => {
+        tab.addEventListener('click', function() {
+            const mdPath = this.getAttribute('data-md-path');
+            const targetId = this.getAttribute('data-bs-target').substring(1).replace('content', 'markdown-content');
+            loadMarkdownContent(mdPath, targetId);
+        });
+    });
+    
+    // Load initial content when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        // Load MQTT content by default
+        loadMarkdownContent('devices/mqtt_connection.md', 'mqtt-markdown-content');
+    });
+    
+    // Add custom styles for markdown content
+    document.head.insertAdjacentHTML('beforeend', `
+        <style>
+            .markdown-body {
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+                font-size: 16px;
+                line-height: 1.6;
+                word-wrap: break-word;
+                padding: 15px;
+            }
+            .markdown-body h1, 
+            .markdown-body h2,
+            .markdown-body h3,
+            .markdown-body h4,
+            .markdown-body h5,
+            .markdown-body h6 {
+                margin-top: 24px;
+                margin-bottom: 16px;
+                font-weight: 600;
+                line-height: 1.25;
+            }
+            .markdown-body h1 {
+                font-size: 2em;
+                border-bottom: 1px solid #eaecef;
+                padding-bottom: 0.3em;
+            }
+            .markdown-body h2 {
+                font-size: 1.5em;
+                border-bottom: 1px solid #eaecef;
+                padding-bottom: 0.3em;
+            }
+            .markdown-body pre {
+                padding: 16px;
+                overflow: auto;
+                font-size: 85%;
+                line-height: 1.45;
+                background-color: #f6f8fa;
+                border-radius: 3px;
+                margin-bottom: 16px;
+            }
+            .markdown-body code {
+                padding: 0.2em 0.4em;
+                margin: 0;
+                font-size: 85%;
+                background-color: rgba(27,31,35,0.05);
+                border-radius: 3px;
+            }
+            .markdown-body pre > code {
+                padding: 0;
+                background-color: transparent;
+            }
+            .markdown-body table {
+                display: block;
+                width: 100%;
+                overflow: auto;
+                margin-top: 0;
+                margin-bottom: 16px;
+                border-spacing: 0;
+                border-collapse: collapse;
+            }
+            .markdown-body table th,
+            .markdown-body table td {
+                padding: 6px 13px;
+                border: 1px solid #dfe2e5;
+            }
+            .markdown-body table tr {
+                background-color: #fff;
+                border-top: 1px solid #c6cbd1;
+            }
+            .markdown-body table tr:nth-child(2n) {
+                background-color: #f6f8fa;
+            }
+            .markdown-body p {
+                margin-top: 0;
+                margin-bottom: 16px;
+            }
+            .markdown-body ul,
+            .markdown-body ol {
+                padding-left: 2em;
+                margin-top: 0;
+                margin-bottom: 16px;
+            }
+            .markdown-body blockquote {
+                padding: 0 1em;
+                color: #6a737d;
+                border-left: 0.25em solid #dfe2e5;
+                margin: 0 0 16px 0;
+            }
+        </style>
+    `);
+</script>
 {% endblock %}
