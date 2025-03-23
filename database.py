@@ -430,3 +430,53 @@ def get_telemetry_data_count():
     count = conn.execute('SELECT COUNT(*) FROM telemetry_data').fetchone()[0]
     conn.close()
     return count
+
+def cleanup_orphaned_data():
+    """
+    Clean up orphaned telemetry data that might remain after devices or topics are deleted.
+    
+    This function removes any telemetry data records that reference non-existent devices or topics.
+    
+    Returns:
+        dict: A dictionary containing the number of records deleted and success status
+    """
+    conn = get_db_connection()
+    try:
+        # Begin transaction
+        conn.execute('BEGIN TRANSACTION')
+        
+        # Delete telemetry data with non-existent device_id
+        result1 = conn.execute('''
+            DELETE FROM telemetry_data 
+            WHERE device_id NOT IN (SELECT id FROM devices)
+        ''')
+        deleted_device_data = result1.rowcount
+        
+        # Delete telemetry data with non-existent topic_id
+        result2 = conn.execute('''
+            DELETE FROM telemetry_data 
+            WHERE topic_id NOT IN (SELECT id FROM topics)
+        ''')
+        deleted_topic_data = result2.rowcount
+        
+        # Commit the transaction
+        conn.commit()
+        
+        total_deleted = deleted_device_data + deleted_topic_data
+        print(f"Successfully cleaned up {total_deleted} orphaned telemetry data records")
+        
+        return {
+            'success': True,
+            'deleted_count': total_deleted,
+            'device_data_deleted': deleted_device_data,
+            'topic_data_deleted': deleted_topic_data
+        }
+    except sqlite3.Error as e:
+        print(f"Error cleaning up orphaned data: {e}")
+        conn.rollback()
+        return {
+            'success': False,
+            'error': str(e)
+        }
+    finally:
+        conn.close()

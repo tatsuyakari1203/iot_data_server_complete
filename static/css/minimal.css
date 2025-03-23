@@ -26,7 +26,7 @@
 body {
     padding-top: 56px;
     background-color: #fafafa;
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Noto Sans Vietnamese', 'Roboto', sans-serif;
     color: var(--text-primary);
     line-height: 1.6;
 }
@@ -35,6 +35,7 @@ h1, h2, h3, h4, h5, h6 {
     font-weight: 500;
     color: var(--dark-color);
     margin-bottom: 1rem;
+    font-family: 'Noto Sans Vietnamese', 'Roboto', sans-serif;
 }
 
 code, pre {
@@ -403,7 +404,7 @@ pre.bg-light {
 
 /* Wiki specific styles */
 .wiki-container {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-family: 'Noto Sans Vietnamese', 'Roboto', sans-serif;
 }
 
 .wiki-toc {

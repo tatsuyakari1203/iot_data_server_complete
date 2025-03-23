@@ -3,7 +3,8 @@ from flask_bootstrap import Bootstrap
 from mqtt_server import mqtt_server
 from database import (
     init_db, create_client, get_all_clients, create_topic, get_all_topics,
-    get_all_devices, delete_topic, delete_device, get_telemetry_data, delete_client, get_telemetry_data_count
+    get_all_devices, delete_topic, delete_device, get_telemetry_data, delete_client, get_telemetry_data_count,
+    cleanup_orphaned_data
 )
 from api import api_bp
 import threading
@@ -67,12 +68,12 @@ def login():
         if verify_credentials(username, password):
             user = User(1, username)
             login_user(user)
-            flash('Đăng nhập thành công!', 'success')
+            flash('Login successful!', 'success')
             
             next_page = request.args.get('next')
             return redirect(next_page or url_for('dashboard'))
         else:
-            flash('Tên đăng nhập hoặc mật khẩu không chính xác!', 'danger')
+            flash('Invalid username or password!', 'danger')
     
     return render_template('login.html')
 
@@ -81,7 +82,7 @@ def login():
 @login_required
 def logout():
     logout_user()
-    flash('Bạn đã đăng xuất thành công!', 'success')
+    flash('You have been logged out successfully!', 'success')
     return redirect(url_for('index'))
 
 # Root route - redirects to About page
@@ -139,9 +140,9 @@ def delete_client_route(client_id):
     success = delete_client(client_id)
     
     if success:
-        flash('Đã xóa client thành công cùng với tất cả thiết bị và chủ đề liên quan', 'success')
+        flash('Client deleted successfully along with all associated devices and topics', 'success')
     else:
-        flash('Không thể xóa client. Vui lòng kiểm tra lại.', 'danger')
+        flash('Failed to delete client. Please try again.', 'danger')
         
     return redirect(url_for('clients'))
 
@@ -178,9 +179,9 @@ def delete_topic_route(topic_id):
     success = delete_topic(topic_id, client_id)
     
     if success:
-        flash('Chủ đề đã được xóa thành công', 'success')
+        flash('Topic deleted successfully', 'success')
     else:
-        flash('Không thể xóa chủ đề. Hãy chắc chắn rằng bạn có quyền truy cập và chủ đề tồn tại.', 'danger')
+        flash('Failed to delete topic. Please ensure you have access and the topic exists.', 'danger')
     
     return redirect(url_for('topics'))
 
@@ -195,9 +196,9 @@ def delete_device_route(device_id):
     success = delete_device(device_id, client_id)
     
     if success:
-        flash('Thiết bị đã được xóa thành công', 'success')
+        flash('Device deleted successfully', 'success')
     else:
-        flash('Không thể xóa thiết bị. Hãy chắc chắn rằng bạn có quyền truy cập và thiết bị tồn tại.', 'danger')
+        flash('Failed to delete device. Please ensure you have access and the device exists.', 'danger')
     
     return redirect(url_for('devices'))
 
@@ -367,6 +368,22 @@ def api_device_data():
     
     return jsonify({'device_data': device_data})
 
+# Cleanup orphaned data
+@app.route('/cleanup-orphaned-data', methods=['POST'])
+@login_required
+def cleanup_data_route():
+    result = cleanup_orphaned_data()
+    
+    if result['success']:
+        if result['deleted_count'] > 0:
+            flash(f'Successfully cleaned up {result["deleted_count"]} orphaned data records.', 'success')
+        else:
+            flash('No orphaned data found to clean up.', 'info')
+    else:
+        flash(f'Error cleaning up orphaned data: {result.get("error", "Unknown error")}', 'danger')
+    
+    return redirect(url_for('data'))
+
 # Handle 404 errors
 @app.errorhandler(404)
 def page_not_found(e):
@@ -378,7 +395,7 @@ def page_not_found(e):
 # Handle 401 errors (unauthorized)
 @app.errorhandler(401)
 def unauthorized(e):
-    flash('Vui lòng đăng nhập để tiếp tục.', 'warning')
+    flash('Please login to continue.', 'warning')
     return redirect(url_for('login', next=request.url))
 
 if __name__ == '__main__':
