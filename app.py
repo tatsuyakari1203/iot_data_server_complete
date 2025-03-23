@@ -20,6 +20,9 @@ load_dotenv()
 # Initialize the Flask application
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', os.urandom(24))
+app.config['DEBUG'] = os.getenv('FLASK_DEBUG', 'False').lower() in ('true', '1', 't')
+app.config['HOST'] = os.getenv('FLASK_HOST', '0.0.0.0')
+app.config['PORT'] = int(os.getenv('FLASK_PORT', 5000))
 Bootstrap(app)
 
 # Initialize Flask-Login
@@ -263,4 +266,4 @@ def unauthorized(e):
     return redirect(url_for('login', next=request.url))
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=app.config['DEBUG'], host=app.config['HOST'], port=app.config['PORT'])

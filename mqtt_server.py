@@ -1,11 +1,20 @@
 import paho.mqtt.client as mqtt
 import json
+import os
 from database import get_client_by_api_key, get_topic_by_name, get_device_by_name
 from database import create_device, create_topic, store_telemetry_data
 from datetime import datetime
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 class MQTTServer:
-    def __init__(self, broker_host="localhost", broker_port=1883, username=None, password=None):
+    def __init__(self, 
+                 broker_host=os.getenv('MQTT_BROKER', 'localhost'), 
+                 broker_port=int(os.getenv('MQTT_PORT', 1883)), 
+                 username=os.getenv('MQTT_USERNAME', None), 
+                 password=os.getenv('MQTT_PASSWORD', None)):
         self.broker_host = broker_host
         self.broker_port = broker_port
         self.username = username
@@ -170,4 +179,4 @@ class MQTTServer:
         self.client.publish(topic, payload, qos, retain)
 
 # Create a single instance to be used by the Flask app
-mqtt_server = MQTTServer(broker_host="localhost")
+mqtt_server = MQTTServer()

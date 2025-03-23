@@ -3,8 +3,13 @@ import uuid
 import json
 import os
 from datetime import datetime
+from dotenv import load_dotenv
 
-DATABASE_PATH = "data.db"
+# Load environment variables
+load_dotenv()
+
+# Get database path from environment variable or use default
+DATABASE_PATH = os.getenv('DATABASE_PATH', 'data.db')
 
 def get_db_connection():
     """Create a connection to the SQLite database."""
