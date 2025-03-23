@@ -6,6 +6,28 @@
 <div class="container-fluid">
     <h2 class="mt-3 mb-4">Dashboard</h2>
     
+    <!-- MQTT Status Card -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-server fa-2x me-3 {% if mqtt_info.is_connected %}text-success{% else %}text-danger{% endif %}"></i>
+                        <div>
+                            <h5 class="mb-1">MQTT Broker Status</h5>
+                            <p class="mb-0">
+                                <strong>Host:</strong> {{ mqtt_info.broker_host }}:{{ mqtt_info.broker_port }} 
+                                <span class="badge {% if mqtt_info.is_connected %}bg-success{% else %}bg-danger{% endif %} ms-2">
+                                    {% if mqtt_info.is_connected %}Connected{% else %}Disconnected{% endif %}
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <!-- Statistics Cards -->
     <div class="row mb-4">
         <div class="col-xl-3 col-md-6">

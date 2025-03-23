@@ -108,7 +108,14 @@ def dashboard():
         'data_count': get_telemetry_data_count()  # Use a new function to get total count
     }
     
-    return render_template('index.html', stats=stats, latest_data=latest_data)
+    # Get MQTT broker information
+    mqtt_info = {
+        'broker_host': mqtt_server.broker_host,
+        'broker_port': mqtt_server.broker_port,
+        'is_connected': mqtt_server.client.is_connected() if hasattr(mqtt_server.client, 'is_connected') else False
+    }
+    
+    return render_template('index.html', stats=stats, latest_data=latest_data, mqtt_info=mqtt_info)
 
 # Client management
 @app.route('/clients', methods=['GET', 'POST'])
