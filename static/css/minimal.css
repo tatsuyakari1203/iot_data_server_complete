@@ -499,3 +499,57 @@ pre.bg-light {
 .api-table .url-column {
     width: 150px;
 }
+
+/* Mobile Responsive Styles */
+@media (max-width: 767.98px) {
+    .sidebar {
+        position: fixed;
+        top: 56px;
+        left: 0;
+        width: 100%;
+        height: auto;
+        max-height: calc(100vh - 56px);
+        overflow-y: auto;
+        z-index: 1030;
+        background-color: white;
+        box-shadow: 0 0.5rem 1rem rgba(0,0,0,.15);
+        padding: 1rem 0;
+        display: none;
+    }
+    
+    .sidebar.show {
+        display: block !important;
+    }
+    
+    .navbar .nav-link {
+        padding: 0.5rem 0.75rem;
+    }
+    
+    .content-wrapper {
+        padding: 1rem;
+    }
+    
+    /* Add mobile navigation items */
+    #navbarNav .navbar-nav {
+        width: 100%;
+    }
+    
+    /* Add mobile menu button */
+    .navbar-toggler {
+        order: 1;
+        margin-left: 0.5rem;
+    }
+}
+
+/* Hide desktop sidebar toggle button since we don't need it */
+.btn.nav-link {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.btn.nav-link:hover, 
+.btn.nav-link:focus {
+    color: white;
+    box-shadow: none;
+}

@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 from flask_bootstrap import Bootstrap
 from mqtt_server import mqtt_server
+from socket_server import init_socket_server
 from database import (
     init_db, create_client, get_all_clients, create_topic, get_all_topics,
     get_all_devices, delete_topic, delete_device, get_telemetry_data, delete_client, get_telemetry_data_count,
@@ -28,6 +29,9 @@ Bootstrap(app)
 
 # Initialize Flask-Login
 login_manager = init_login_manager(app)
+
+# Initialize Socket.IO
+socketio = init_socket_server(app)
 
 # Custom login_required for redirecting to login with next parameter
 def custom_login_required(f):
@@ -398,5 +402,16 @@ def unauthorized(e):
     flash('Please login to continue.', 'warning')
     return redirect(url_for('login', next=request.url))
 
+# Start the application
 if __name__ == '__main__':
-    app.run(debug=app.config['DEBUG'], host=app.config['HOST'], port=app.config['PORT'])
+    try:
+        # Ensure database is initialized
+        init_db()
+        
+        # Try to start the app with Socket.IO
+        socketio.run(app, host=app.config['HOST'], port=app.config['PORT'], debug=app.config['DEBUG'], allow_unsafe_werkzeug=True)
+    except KeyboardInterrupt:
+        print("\nShutting down gracefully...")
+        if mqtt_thread is not None:
+            mqtt_server.stop()
+        print("Application has been shut down.")

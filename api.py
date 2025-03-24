@@ -3,6 +3,7 @@ from database import (
     get_client_by_api_key, get_all_topics, get_all_devices, 
     get_telemetry_data, get_topic_by_name, get_device_by_name
 )
+from datetime import datetime
 
 # Create a Blueprint for the REST API
 api_bp = Blueprint('api', __name__, url_prefix='/api')
@@ -10,6 +11,8 @@ api_bp = Blueprint('api', __name__, url_prefix='/api')
 # Authenticate API requests
 def authenticate():
     api_key = request.headers.get('X-API-Key')
+    if not api_key:
+        api_key = request.json.get('api_key') if request.is_json else None
     if not api_key:
         return None
     return get_client_by_api_key(api_key)
@@ -173,3 +176,86 @@ def publish_data():
     except Exception as e:
         print(f"Unexpected error in publish endpoint: {e}")
         return jsonify({'error': 'Lỗi không xác định khi xử lý yêu cầu'}), 500
+
+# HTTP endpoint for sending commands to devices
+@api_bp.route('/command', methods=['POST'])
+def send_command():
+    client = authenticate()
+    if not client:
+        return jsonify({'error': 'Xác thực thất bại. Vui lòng cung cấp API key hợp lệ.'}), 401
+    
+    # Check if request is JSON
+    if not request.is_json:
+        return jsonify({'error': 'Yêu cầu phải là JSON'}), 400
+    
+    try:
+        # Get and validate input data
+        data = request.get_json()
+        
+        # Check for required fields
+        required_fields = ['device', 'topic', 'action', 'target']
+        missing_fields = [field for field in required_fields if field not in data]
+        
+        if missing_fields:
+            return jsonify({
+                'error': f'Thiếu các trường bắt buộc: {", ".join(missing_fields)}'
+            }), 400
+        
+        # Extract fields
+        device_name = data['device']
+        topic_name = data['topic']
+        action = data['action']
+        target = data['target']
+        
+        # Validate device name
+        if not isinstance(device_name, str) or not device_name.strip():
+            return jsonify({'error': 'Tên thiết bị không hợp lệ'}), 400
+            
+        # Sanitize device name
+        device_name = device_name.strip()
+        
+        # Validate device exists
+        device = get_device_by_name(device_name, client['id'])
+        if not device:
+            return jsonify({'error': f'Thiết bị không tồn tại: {device_name}'}), 404
+        
+        # Validate action
+        if not isinstance(action, str) or action not in ['on', 'off', 'toggle']:
+            return jsonify({'error': 'Hành động không hợp lệ. Sử dụng: on, off, hoặc toggle'}), 400
+        
+        # Validate target
+        if not isinstance(target, str) or not target.strip():
+            return jsonify({'error': 'Đối tượng mục tiêu không hợp lệ'}), 400
+        
+        # Forward the command to Socket.IO server
+        try:
+            from socket_server import socketio
+            
+            # Create command object
+            command = {
+                'action': action,
+                'target': target,
+                'api_key': client['api_key'] if 'api_key' in client else data.get('api_key'),
+                'device': device_name,
+                'timestamp': datetime.now().isoformat()
+            }
+            
+            # Send command to device's room
+            socketio.emit('command', command, room=device_name)
+            
+            print(f"Command sent via HTTP API: {action} -> {target} for device {device_name}")
+            
+            return jsonify({
+                'status': 'success',
+                'message': f'Lệnh {action} đã được gửi đến {device_name}'
+            })
+            
+        except Exception as e:
+            print(f"Error sending command via Socket.IO: {e}")
+            return jsonify({
+                'error': f'Lỗi khi gửi lệnh qua Socket.IO: {str(e)}'
+            }), 500
+            
+    except Exception as e:
+        print(f"Unexpected error in command endpoint: {e}")
+        return jsonify({'error': f'Lỗi không xác định: {str(e)}'}), 500

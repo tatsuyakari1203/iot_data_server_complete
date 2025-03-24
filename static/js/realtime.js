@@ -245,3 +245,43 @@ async function updateMqttStatus() {
 
 // Initialize when the DOM is fully loaded
 document.addEventListener('DOMContentLoaded', initRealTimeUpdates);
+
+// Mobile sidebar management
+document.addEventListener('DOMContentLoaded', function() {
+    const navbarToggler = document.querySelector('.navbar-toggler');
+    const sidebarMenu = document.getElementById('sidebarMenu');
+    const sidebarLinks = document.querySelectorAll('.sidebar .nav-link');
+    
+    // Toggle sidebar when navbar toggler is clicked
+    if (navbarToggler && sidebarMenu) {
+        navbarToggler.addEventListener('click', function() {
+            if (window.innerWidth < 768) {
+                // Toggle sidebar visibility
+                if (sidebarMenu.classList.contains('show')) {
+                    sidebarMenu.classList.remove('show');
+                } else {
+                    sidebarMenu.classList.add('show');
+                }
+            }
+        });
+    }
+    
+    // Close sidebar when a link is clicked (mobile only)
+    if (sidebarLinks && sidebarMenu) {
+        sidebarLinks.forEach(link => {
+            link.addEventListener('click', function() {
+                // Check if we're on mobile view
+                if (window.innerWidth < 768) {
+                    sidebarMenu.classList.remove('show');
+                }
+            });
+        });
+    }
+    
+    // Handle window resize
+    window.addEventListener('resize', function() {
+        if (window.innerWidth >= 768 && sidebarMenu) {
+            sidebarMenu.classList.remove('show');
+        }
+    });
+});
