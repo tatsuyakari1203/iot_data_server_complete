@@ -1,8 +1,8 @@
 # IoT Data Server
 
-*Read this in: [English](#iot-data-server-1), [Tiếng Việt](#máy-chủ-dữ-liệu-iot)*
+*Read this in: [English](#overview), [Tiếng Việt](#máy-chủ-dữ-liệu-iot)*
 
-## IoT Data Server
+## Overview
 
 A comprehensive platform for collecting, storing, and visualizing IoT device data. Supports both MQTT and HTTP protocols, with data storage in SQLite and a modern web-based management interface.
 
@@ -63,7 +63,7 @@ A comprehensive platform for collecting, storing, and visualizing IoT device dat
 4. **Access the Web Interface**
 
    Open your browser and navigate to:
-   ```
+   ```text
    http://localhost:5000
    ```
 
@@ -106,7 +106,7 @@ A comprehensive platform for collecting, storing, and visualizing IoT device dat
 4. **Access the Web Interface**
 
    Open your browser and navigate to:
-   ```
+   ```text
    http://localhost:5000
    ```
 
@@ -242,8 +242,8 @@ Nền tảng toàn diện để thu thập, lưu trữ và hiển thị dữ li�
 
 4. **Truy cập giao diện web**
 
-   Mở trình duyệt và truy cập:
-   ```
+   Open your browser and navigate to:
+   ```text
    http://localhost:5000
    ```
 
@@ -285,8 +285,8 @@ Nền tảng toàn diện để thu thập, lưu trữ và hiển thị dữ li�
 
 4. **Truy cập giao diện web**
 
-   Mở trình duyệt và truy cập:
-   ```
+   Open your browser and navigate to:
+   ```text
    http://localhost:5000
    ```
 
