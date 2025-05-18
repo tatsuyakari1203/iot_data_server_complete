@@ -4,7 +4,7 @@ from mqtt_server import mqtt_server
 from database import (
     init_db, create_client, get_all_clients, create_topic, get_all_topics,
     get_all_devices, delete_topic, delete_device, get_telemetry_data, delete_client, get_telemetry_data_count,
-    cleanup_orphaned_data, update_client_api_key
+    cleanup_orphaned_data, update_client_api_key, get_device_telemetry_data
 )
 from api import api_bp
 import threading

@@ -459,8 +459,13 @@ def get_telemetry_data(device_id=None, topic_id=None, limit=100):
         query += ' WHERE td.topic_id = ?'
         params.append(topic_id)
     
-    query += ' ORDER BY td.timestamp DESC LIMIT ?'
-    params.append(limit)
+    # Added ORDER BY
+    query += ' ORDER BY td.timestamp DESC'
+    
+    # Only add LIMIT if a limit is specified
+    if limit is not None:
+        query += ' LIMIT ?'
+        params.append(limit)
     
     data = conn.execute(query, params).fetchall()
     conn.close()
@@ -553,21 +558,21 @@ def get_device_telemetry_data(topic_id=None, limit_per_device=5):
     for device in devices:
         if device:
             # Build the query for telemetry data
-            query = '''
-                SELECT t.*, tp.name as topic_name 
-                FROM telemetry t
-                LEFT JOIN topics tp ON t.topic_id = tp.id
-                WHERE t.device_id = ?
-            '''
+            query = """
+                SELECT td.*, tp.name as topic_name 
+                FROM telemetry_data td
+                LEFT JOIN topics tp ON td.topic_id = tp.id
+                WHERE td.device_id = ?
+            """
             params = [device['id']]
             
             # Add topic filter if specified
             if topic_id is not None:
-                query += ' AND t.topic_id = ?'
+                query += " AND td.topic_id = ?"
                 params.append(topic_id)
             
             # Add ordering and limit
-            query += ' ORDER BY t.timestamp DESC LIMIT ?'
+            query += " ORDER BY td.timestamp DESC LIMIT ?"
             params.append(limit_per_device)
             
             # Execute query

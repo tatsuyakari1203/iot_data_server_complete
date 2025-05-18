@@ -1,8 +1,11 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, Response
 from database import (
     get_client_by_api_key, get_all_topics, get_all_devices, 
     get_telemetry_data, get_topic_by_name, get_device_by_name
 )
+import csv
+import io
+from datetime import datetime
 
 # Create a Blueprint for the REST API
 api_bp = Blueprint('api', __name__, url_prefix='/api')
@@ -173,3 +176,205 @@ def publish_data():
     except Exception as e:
         print(f"Unexpected error in publish endpoint: {e}")
         return jsonify({'error': 'Lỗi không xác định khi xử lý yêu cầu'}), 500
+
+# CSV Export Endpoints
+
+# Export all data as CSV
+@api_bp.route('/export_all_csv', methods=['GET'])
+def export_all_csv():
+    # Check if limit parameter is present (default is to export all data)
+    limit_param = request.args.get('limit', type=int)
+    no_limit = request.args.get('no_limit', 'true').lower() in ('true', '1', 't')
+    
+    # Determine the limit value (default None means no limit = export all data)
+    limit = None if no_limit else limit_param
+    
+    # Get data with or without limit
+    data = get_telemetry_data(limit=limit)
+    
+    # Create CSV in memory
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Write headers
+    writer.writerow(['ID', 'Timestamp', 'Device ID', 'Device Name', 'Topic ID', 'Topic Name', 'Payload'])
+    
+    # Write data rows
+    for item in data:
+        writer.writerow([
+            item['id'],
+            item['timestamp'],
+            item['device_id'],
+            item.get('device_name', 'Unknown Device'),
+            item['topic_id'],
+            item.get('topic_name', 'Unknown Topic'),
+            item['payload']
+        ])
+    
+    # Prepare response
+    output.seek(0)
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    filename_suffix = 'full' if limit is None else f'limit_{limit}'
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-disposition": f"attachment; filename=all_data_export_{filename_suffix}_{timestamp}.csv"}
+    )
+
+# Export topic data as CSV
+@api_bp.route('/export_topic_csv/<int:topic_id>', methods=['GET'])
+def export_topic_csv(topic_id):
+    # Check if no_limit parameter is present or limit parameter value
+    no_limit = request.args.get('no_limit', 'false').lower() in ('true', '1', 't')
+    limit_param = request.args.get('limit', type=int)
+    
+    # Determine the limit value
+    limit = None if no_limit else limit_param  # None means no limit
+    
+    # Get data for the topic with or without limit
+    data = get_telemetry_data(topic_id=topic_id, limit=limit)
+    
+    # Get topic name for better file naming
+    topics = get_all_topics()
+    topic_name = 'unknown_topic'
+    for topic in topics:
+        if topic['id'] == topic_id:
+            topic_name = topic['name'].replace(' ', '_')
+            break
+    
+    # Create CSV in memory
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Write headers
+    writer.writerow(['ID', 'Timestamp', 'Device ID', 'Device Name', 'Topic ID', 'Topic Name', 'Payload'])
+    
+    # Write data rows
+    for item in data:
+        writer.writerow([
+            item['id'],
+            item['timestamp'],
+            item['device_id'],
+            item.get('device_name', 'Unknown Device'),
+            item['topic_id'],
+            item.get('topic_name', 'Unknown Topic'),
+            item['payload']
+        ])
+    
+    # Prepare response
+    output.seek(0)
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    filename_suffix = 'full' if no_limit else 'recent'
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-disposition": f"attachment; filename=topic_{topic_name}_{filename_suffix}_{timestamp}.csv"}
+    )
+
+# Export device data as CSV
+@api_bp.route('/export_device_csv/<int:device_id>', methods=['GET'])
+def export_device_csv(device_id):
+    # Check if limit parameter is present
+    limit_param = request.args.get('limit', type=int)
+    no_limit = request.args.get('no_limit', 'true').lower() in ('true', '1', 't')
+    
+    # Determine the limit value (default None means no limit)
+    limit = None if no_limit else limit_param
+    
+    # Get data for the device with or without limit
+    data = get_telemetry_data(device_id=device_id, limit=limit)
+    
+    # Get device name for better file naming
+    devices = get_all_devices()
+    device_name = 'unknown_device'
+    for device in devices:
+        if device['id'] == device_id:
+            device_name = device['name'].replace(' ', '_')
+            break
+    
+    # Create CSV in memory
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Write headers
+    writer.writerow(['ID', 'Timestamp', 'Device ID', 'Device Name', 'Topic ID', 'Topic Name', 'Payload'])
+    
+    # Write data rows
+    for item in data:
+        writer.writerow([
+            item['id'],
+            item['timestamp'],
+            item['device_id'],
+            item.get('device_name', 'Unknown Device'),
+            item['topic_id'],
+            item.get('topic_name', 'Unknown Topic'),
+            item['payload']
+        ])
+    
+    # Prepare response
+    output.seek(0)
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    filename_suffix = 'full' if limit is None else f'recent'
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-disposition": f"attachment; filename=device_{device_name}_{filename_suffix}_{timestamp}.csv"}
+    )
+
+# Export device data for a specific topic as CSV
+@api_bp.route('/export_device_topic_csv/<int:device_id>/<int:topic_id>', methods=['GET'])
+def export_device_topic_csv(device_id, topic_id):
+    # Check if limit parameter is present
+    limit_param = request.args.get('limit', type=int)
+    no_limit = request.args.get('no_limit', 'true').lower() in ('true', '1', 't')
+    
+    # Determine the limit value (default None means no limit)
+    limit = None if no_limit else limit_param
+    
+    # Get data for the device and topic with or without limit
+    data = get_telemetry_data(device_id=device_id, topic_id=topic_id, limit=limit)
+    
+    # Get device and topic names for better file naming
+    devices = get_all_devices()
+    topics = get_all_topics()
+    
+    device_name = 'unknown_device'
+    for device in devices:
+        if device['id'] == device_id:
+            device_name = device['name'].replace(' ', '_')
+            break
+            
+    topic_name = 'unknown_topic'
+    for topic in topics:
+        if topic['id'] == topic_id:
+            topic_name = topic['name'].replace(' ', '_')
+            break
+    
+    # Create CSV in memory
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Write headers
+    writer.writerow(['ID', 'Timestamp', 'Device ID', 'Device Name', 'Topic ID', 'Topic Name', 'Payload'])
+    
+    # Write data rows
+    for item in data:
+        writer.writerow([
+            item['id'],
+            item['timestamp'],
+            item['device_id'],
+            item.get('device_name', 'Unknown Device'),
+            item['topic_id'],
+            item.get('topic_name', 'Unknown Topic'),
+            item['payload']
+        ])
+    
+    # Prepare response
+    output.seek(0)
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    filename_suffix = 'full' if limit is None else f'recent'
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-disposition": f"attachment; filename=device_{device_name}_topic_{topic_name}_{filename_suffix}_{timestamp}.csv"}
+    )
