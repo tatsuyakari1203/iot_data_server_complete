@@ -555,7 +555,7 @@ def get_device_telemetry_data(topic_id=None, limit_per_device=5):
             # Build the query for telemetry data
             query = '''
                 SELECT t.*, tp.name as topic_name 
-                FROM telemetry t
+                FROM telemetry_data t
                 LEFT JOIN topics tp ON t.topic_id = tp.id
                 WHERE t.device_id = ?
             '''
@@ -597,3 +597,87 @@ def get_device_telemetry_data(topic_id=None, limit_per_device=5):
     
     conn.close()
     return device_data
+
+def get_topic_by_id(topic_id):
+    """Lấy thông tin của một topic cụ thể theo ID"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute('SELECT * FROM topics WHERE id = ?', (topic_id,))
+    topic = cursor.fetchone()
+    
+    if topic:
+        topic_dict = dict(zip([column[0] for column in cursor.description], topic))
+        conn.close()
+        return topic_dict
+    
+    conn.close()
+    return None
+
+def get_all_telemetry_by_topic(topic_id):
+    """Lấy toàn bộ dữ liệu telemetry cho một topic không giới hạn số lượng"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+        SELECT t.*, d.name as device_name, tp.name as topic_name 
+        FROM telemetry t
+        JOIN devices d ON t.device_id = d.id
+        JOIN topics tp ON t.topic_id = tp.id
+        WHERE t.topic_id = ?
+        ORDER BY t.timestamp DESC
+    ''', (topic_id,))
+    
+    data = [dict(zip([column[0] for column in cursor.description], row)) for row in cursor.fetchall()]
+    conn.close()
+    return data
+
+def get_device_by_id(device_id):
+    """Lấy thông tin của một thiết bị cụ thể theo ID"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute('SELECT * FROM devices WHERE id = ?', (device_id,))
+    device = cursor.fetchone()
+    
+    if device:
+        device_dict = dict(zip([column[0] for column in cursor.description], device))
+        conn.close()
+        return device_dict
+    
+    conn.close()
+    return None
+
+def get_device_telemetry_data_full(device_id):
+    """Lấy toàn bộ dữ liệu telemetry cho một thiết bị"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+        SELECT t.*, tp.name as topic_name 
+        FROM telemetry t
+        JOIN topics tp ON t.topic_id = tp.id
+        WHERE t.device_id = ?
+        ORDER BY t.timestamp DESC
+    ''', (device_id,))
+    
+    data = [dict(zip([column[0] for column in cursor.description], row)) for row in cursor.fetchall()]
+    conn.close()
+    return data
+
+def get_device_topic_telemetry_data(device_id, topic_id):
+    """Lấy toàn bộ dữ liệu telemetry cho một thiết bị và một topic cụ thể"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+        SELECT t.*, tp.name as topic_name 
+        FROM telemetry t
+        JOIN topics tp ON t.topic_id = tp.id
+        WHERE t.device_id = ? AND t.topic_id = ?
+        ORDER BY t.timestamp DESC
+    ''', (device_id, topic_id))
+    
+    data = [dict(zip([column[0] for column in cursor.description], row)) for row in cursor.fetchall()]
+    conn.close()
+    return data

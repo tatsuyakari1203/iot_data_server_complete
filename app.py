@@ -1,10 +1,11 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, make_response
 from flask_bootstrap import Bootstrap
 from mqtt_server import mqtt_server
 from database import (
     init_db, create_client, get_all_clients, create_topic, get_all_topics,
     get_all_devices, delete_topic, delete_device, get_telemetry_data, delete_client, get_telemetry_data_count,
-    cleanup_orphaned_data, update_client_api_key
+    cleanup_orphaned_data, update_client_api_key, get_topic_by_id, get_all_telemetry_by_topic, get_device_telemetry_data_full,
+    get_device_topic_telemetry_data, get_device_telemetry_data
 )
 from api import api_bp
 import threading
@@ -14,6 +15,9 @@ from dotenv import load_dotenv
 from flask_login import login_required, login_user, logout_user, current_user, LoginManager
 from auth import User, init_login_manager, verify_credentials
 from functools import wraps
+import io
+import csv
+from datetime import datetime
 
 # Load environment variables
 load_dotenv()
@@ -263,7 +267,6 @@ def data():
             }
     
     # Add current datetime for CSV export filename
-    from datetime import datetime
     now = datetime.now()
     
     # Get all telemetry data for table view and export
@@ -375,6 +378,309 @@ def cleanup_data_route():
         flash(f'Error cleaning up orphaned data: {result.get("error", "Unknown error")}', 'danger')
     
     return redirect(url_for('data'))
+
+# Route for exporting topic CSV
+@app.route('/api/export_topic_csv/<int:topic_id>', methods=['GET'])
+@login_required
+def export_topic_csv(topic_id):
+    """Tạo và trả về file CSV cho toàn bộ dữ liệu của một topic"""
+    try:
+        # Lấy thông tin topic
+        topic = get_topic_by_id(topic_id)
+        if not topic:
+            return jsonify({"status": "error", "message": "Topic không tồn tại"}), 404
+            
+        # Lấy toàn bộ dữ liệu telemetry cho topic này
+        data = get_all_telemetry_by_topic(topic_id)
+        
+        # Tạo file CSV
+        csv_data = io.StringIO()
+        csv_writer = csv.writer(csv_data)
+        
+        # Ghi header
+        csv_writer.writerow(['ID', 'Timestamp', 'Device', 'Topic', 'Payload Value', 'Payload Unit'])
+        
+        # Ghi dữ liệu
+        for item in data:
+            timestamp = datetime.fromisoformat(item['timestamp'].replace('Z', '+00:00')) if 'Z' in item['timestamp'] else datetime.fromisoformat(item['timestamp'])
+            formatted_time = timestamp.strftime('%Y-%m-%d %H:%M:%S')
+            
+            # Xử lý payload
+            payload_value = ''
+            payload_unit = ''
+            
+            try:
+                # Nếu payload là chuỗi JSON
+                if isinstance(item['payload'], str):
+                    try:
+                        payload_obj = json.loads(item['payload'])
+                        if isinstance(payload_obj, dict):
+                            if 'value' in payload_obj:
+                                payload_value = payload_obj['value']
+                                payload_unit = payload_obj.get('unit', '')
+                            else:
+                                payload_value = json.dumps(payload_obj)
+                        else:
+                            payload_value = item['payload']
+                    except json.JSONDecodeError:
+                        payload_value = item['payload']
+                # Nếu payload đã là dictionary
+                elif isinstance(item['payload'], dict):
+                    if 'value' in item['payload']:
+                        payload_value = item['payload']['value']
+                        payload_unit = item['payload'].get('unit', '')
+                    else:
+                        payload_value = json.dumps(item['payload'])
+                else:
+                    payload_value = str(item['payload']) if item['payload'] is not None else ''
+            except Exception as e:
+                payload_value = f"Error: {str(e)}"
+            
+            csv_writer.writerow([
+                item['id'],
+                formatted_time,
+                item.get('device_name', f"Unknown (ID: {item['device_id']})"),
+                item.get('topic_name', f"Unknown (ID: {item['topic_id']})"),
+                payload_value,
+                payload_unit
+            ])
+        
+        # Tạo response
+        response = make_response(csv_data.getvalue())
+        response.headers["Content-Disposition"] = f"attachment; filename=topic_{topic_id}_{topic['name'].replace(' ', '_')}_data.csv"
+        response.headers["Content-Type"] = "text/csv"
+        
+        return response
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+# Route for exporting device CSV
+@app.route('/api/export_device_csv/<int:device_id>', methods=['GET'])
+@login_required
+def export_device_csv(device_id):
+    """Tạo và trả về file CSV cho toàn bộ dữ liệu của một thiết bị"""
+    try:
+        # Lấy thông tin thiết bị
+        device = get_device_by_id(device_id)
+        if not device:
+            return jsonify({"status": "error", "message": "Thiết bị không tồn tại"}), 404
+            
+        # Lấy toàn bộ dữ liệu telemetry cho thiết bị này
+        data = get_device_telemetry_data_full(device_id)
+        
+        # Tạo file CSV
+        csv_data = io.StringIO()
+        csv_writer = csv.writer(csv_data)
+        
+        # Ghi header
+        csv_writer.writerow(['ID', 'Timestamp', 'Topic', 'Payload Value', 'Payload Unit'])
+        
+        # Ghi dữ liệu
+        for item in data:
+            timestamp = datetime.fromisoformat(item['timestamp'].replace('Z', '+00:00')) if 'Z' in item['timestamp'] else datetime.fromisoformat(item['timestamp'])
+            formatted_time = timestamp.strftime('%Y-%m-%d %H:%M:%S')
+            
+            # Xử lý payload
+            payload_value = ''
+            payload_unit = ''
+            
+            try:
+                if isinstance(item['payload'], str):
+                    try:
+                        payload_obj = json.loads(item['payload'])
+                        if isinstance(payload_obj, dict):
+                            if 'value' in payload_obj:
+                                payload_value = payload_obj['value']
+                                payload_unit = payload_obj.get('unit', '')
+                            else:
+                                payload_value = json.dumps(payload_obj)
+                        else:
+                            payload_value = item['payload']
+                    except json.JSONDecodeError:
+                        payload_value = item['payload']
+                elif isinstance(item['payload'], dict):
+                    if 'value' in item['payload']:
+                        payload_value = item['payload']['value']
+                        payload_unit = item['payload'].get('unit', '')
+                    else:
+                        payload_value = json.dumps(item['payload'])
+                else:
+                    payload_value = str(item['payload']) if item['payload'] is not None else ''
+            except Exception as e:
+                payload_value = f"Error: {str(e)}"
+            
+            csv_writer.writerow([
+                item['id'],
+                formatted_time,
+                item.get('topic_name', f"Unknown (ID: {item['topic_id']})"),
+                payload_value,
+                payload_unit
+            ])
+        
+        # Tạo response
+        response = make_response(csv_data.getvalue())
+        response.headers["Content-Disposition"] = f"attachment; filename=device_{device_id}_{device['name'].replace(' ', '_')}_data.csv"
+        response.headers["Content-Type"] = "text/csv"
+        
+        return response
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+# Route for exporting device topic CSV (specific topic data for a device)
+@app.route('/api/export_device_topic_csv/<int:device_id>/<int:topic_id>', methods=['GET'])
+@login_required
+def export_device_topic_csv(device_id, topic_id):
+    """Tạo và trả về file CSV cho dữ liệu của một thiết bị theo một topic cụ thể"""
+    try:
+        # Lấy thông tin thiết bị và topic
+        device = get_device_by_id(device_id)
+        topic = get_topic_by_id(topic_id)
+        
+        if not device:
+            return jsonify({"status": "error", "message": "Thiết bị không tồn tại"}), 404
+        if not topic:
+            return jsonify({"status": "error", "message": "Topic không tồn tại"}), 404
+            
+        # Lấy dữ liệu telemetry cho thiết bị và topic này
+        data = get_device_topic_telemetry_data(device_id, topic_id)
+        
+        if not data:
+            return jsonify({"status": "error", "message": f"Không có dữ liệu cho thiết bị {device['name']} và topic {topic['name']}"}), 404
+        
+        # Tạo file CSV
+        csv_data = io.StringIO()
+        csv_writer = csv.writer(csv_data)
+        
+        # Ghi header
+        csv_writer.writerow(['ID', 'Timestamp', 'Payload Value', 'Payload Unit'])
+        
+        # Ghi dữ liệu
+        for item in data:
+            timestamp = datetime.fromisoformat(item['timestamp'].replace('Z', '+00:00')) if 'Z' in item['timestamp'] else datetime.fromisoformat(item['timestamp'])
+            formatted_time = timestamp.strftime('%Y-%m-%d %H:%M:%S')
+            
+            # Xử lý payload
+            payload_value = ''
+            payload_unit = ''
+            
+            try:
+                if isinstance(item['payload'], str):
+                    try:
+                        payload_obj = json.loads(item['payload'])
+                        if isinstance(payload_obj, dict):
+                            if 'value' in payload_obj:
+                                payload_value = payload_obj['value']
+                                payload_unit = payload_obj.get('unit', '')
+                            else:
+                                payload_value = json.dumps(payload_obj)
+                        else:
+                            payload_value = item['payload']
+                    except json.JSONDecodeError:
+                        payload_value = item['payload']
+                elif isinstance(item['payload'], dict):
+                    if 'value' in item['payload']:
+                        payload_value = item['payload']['value']
+                        payload_unit = item['payload'].get('unit', '')
+                    else:
+                        payload_value = json.dumps(item['payload'])
+                else:
+                    payload_value = str(item['payload']) if item['payload'] is not None else ''
+            except Exception as e:
+                payload_value = f"Error: {str(e)}"
+            
+            csv_writer.writerow([
+                item['id'],
+                formatted_time,
+                payload_value,
+                payload_unit
+            ])
+        
+        # Tạo response
+        response = make_response(csv_data.getvalue())
+        response.headers["Content-Disposition"] = f"attachment; filename=device_{device_id}_{device['name']}_{topic['name']}_data.csv"
+        response.headers["Content-Type"] = "text/csv"
+        
+        return response
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+# Route for exporting all data
+@app.route('/api/export_all_csv', methods=['GET'])
+@login_required
+def export_all_csv():
+    """Tạo và trả về file CSV cho tất cả dữ liệu"""
+    try:
+        # Lấy toàn bộ dữ liệu telemetry
+        data = get_telemetry_data(limit=1000)  # Giới hạn 1000 bản ghi để tránh quá tải
+        
+        # Tạo file CSV
+        csv_data = io.StringIO()
+        csv_writer = csv.writer(csv_data)
+        
+        # Ghi header
+        csv_writer.writerow(['ID', 'Timestamp', 'Device', 'Topic', 'Payload Value', 'Payload Unit'])
+        
+        # Get all devices and topics for reference
+        devices = {d['id']: d['name'] for d in get_all_devices()}
+        topics = {t['id']: t['name'] for t in get_all_topics()}
+        
+        # Ghi dữ liệu
+        for item in data:
+            timestamp = datetime.fromisoformat(item['timestamp'].replace('Z', '+00:00')) if 'Z' in item['timestamp'] else datetime.fromisoformat(item['timestamp'])
+            formatted_time = timestamp.strftime('%Y-%m-%d %H:%M:%S')
+            
+            device_name = devices.get(item['device_id'], f"Unknown (ID: {item['device_id']})")
+            topic_name = topics.get(item['topic_id'], f"Unknown (ID: {item['topic_id']})")
+            
+            # Xử lý payload
+            payload_value = ''
+            payload_unit = ''
+            
+            try:
+                # Nếu payload là chuỗi JSON
+                if isinstance(item['payload'], str):
+                    try:
+                        payload_obj = json.loads(item['payload'])
+                        if isinstance(payload_obj, dict):
+                            if 'value' in payload_obj:
+                                payload_value = payload_obj['value']
+                                payload_unit = payload_obj.get('unit', '')
+                            else:
+                                payload_value = json.dumps(payload_obj)
+                        else:
+                            payload_value = item['payload']
+                    except json.JSONDecodeError:
+                        payload_value = item['payload']
+                # Nếu payload đã là dictionary
+                elif isinstance(item['payload'], dict):
+                    if 'value' in item['payload']:
+                        payload_value = item['payload']['value']
+                        payload_unit = item['payload'].get('unit', '')
+                    else:
+                        payload_value = json.dumps(item['payload'])
+                else:
+                    payload_value = str(item['payload']) if item['payload'] is not None else ''
+            except Exception as e:
+                payload_value = f"Error: {str(e)}"
+            
+            csv_writer.writerow([
+                item['id'],
+                formatted_time,
+                device_name,
+                topic_name,
+                payload_value,
+                payload_unit
+            ])
+        
+        # Tạo response
+        now = datetime.now().strftime('%Y%m%d_%H%M%S')
+        response = make_response(csv_data.getvalue())
+        response.headers["Content-Disposition"] = f"attachment; filename=all_telemetry_data_{now}.csv"
+        response.headers["Content-Type"] = "text/csv"
+        
+        return response
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 # Handle 404 errors
 @app.errorhandler(404)
