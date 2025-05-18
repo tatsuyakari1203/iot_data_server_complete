@@ -36,6 +36,11 @@
                                             data-clipboard-text="{{ client.api_key }}" title="Copy API Key">
                                         <i class="fas fa-copy"></i>
                                     </button>
+                                    <button class="btn btn-outline-primary btn-sm" type="button" 
+                                            data-bs-toggle="modal" data-bs-target="#editApiKeyModal{{ client.id }}"
+                                            title="Edit API Key">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
                                 </div>
                             </td>
                             <td>{{ client.created_at }}</td>
@@ -84,6 +89,11 @@
                         <input type="text" class="form-control" id="name" name="name" required>
                         <div class="form-text">Enter a name for this client (e.g., "Home Automation", "Weather Station")</div>
                     </div>
+                    <div class="mb-3">
+                        <label for="api_key" class="form-label">API Key (Optional)</label>
+                        <input type="text" class="form-control" id="api_key" name="api_key" placeholder="Leave empty to generate automatically">
+                        <div class="form-text">If you want to use a specific API key, enter it here. Otherwise, a random one will be generated.</div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -123,6 +133,37 @@
                     <button type="submit" class="btn btn-danger">Xóa Client</button>
                 </form>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit API Key Modal for {{ client.name }} -->
+<div class="modal fade" id="editApiKeyModal{{ client.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit API Key for Client: {{ client.name }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('update_client_api_key_route', client_id=client.id) }}" method="post">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="new_api_key" class="form-label">New API Key</label>
+                        <input type="text" class="form-control" id="new_api_key" name="new_api_key" 
+                               value="{{ client.api_key }}" required>
+                        <div class="form-text">Enter the new API key for this client.</div>
+                    </div>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Warning:</strong> Changing the API key will invalidate the existing key immediately.
+                        All devices using this client will need to be updated with the new API key.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update API Key</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

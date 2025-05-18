@@ -11,7 +11,7 @@ load_dotenv()
 
 class MQTTServer:
     def __init__(self, 
-                 broker_host=os.getenv('MQTT_BROKER', 'localhost'), 
+                 broker_host=os.getenv('MQTT_BROKER', 'iot.karis.cloud'), 
                  broker_port=int(os.getenv('MQTT_PORT', 1883)), 
                  username=os.getenv('MQTT_USERNAME', None), 
                  password=os.getenv('MQTT_PASSWORD', None)):

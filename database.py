@@ -32,10 +32,11 @@ def generate_api_key():
     return str(uuid.uuid4())
 
 # Client operations
-def create_client(name):
-    """Create a new client with a generated API key."""
+def create_client(name, api_key=None):
+    """Create a new client with a provided or generated API key."""
     conn = get_db_connection()
-    api_key = generate_api_key()
+    if api_key is None:
+        api_key = generate_api_key()
     conn.execute('INSERT INTO clients (name, api_key) VALUES (?, ?)',
                 (name, api_key))
     conn.commit()
@@ -96,6 +97,48 @@ def delete_client(client_id):
         return True
     except sqlite3.Error as e:
         print(f"Error deleting client: {e}")
+        conn.rollback()
+        return False
+    finally:
+        conn.close()
+
+def update_client_api_key(client_id, new_api_key):
+    """
+    Update a client's API key.
+    
+    Args:
+        client_id (int): ID of the client to update
+        new_api_key (str): New API key to set
+        
+    Returns:
+        bool: True if update was successful, False otherwise
+    """
+    conn = get_db_connection()
+    try:
+        # Begin transaction
+        conn.execute('BEGIN TRANSACTION')
+        
+        # Check if client exists
+        client = conn.execute(
+            'SELECT * FROM clients WHERE id = ?', (client_id,)
+        ).fetchone()
+        
+        if not client:
+            print(f"Attempted to update API key for non-existent client with ID {client_id}")
+            conn.rollback()
+            conn.close()
+            return False
+            
+        # Update API key
+        conn.execute('UPDATE clients SET api_key = ? WHERE id = ?', 
+                    (new_api_key, client_id))
+        
+        # Commit the transaction
+        conn.commit()
+        print(f"Successfully updated API key for client ID {client_id}")
+        return True
+    except sqlite3.Error as e:
+        print(f"Error updating client API key: {e}")
         conn.rollback()
         return False
     finally:
@@ -480,3 +523,77 @@ def cleanup_orphaned_data():
         }
     finally:
         conn.close()
+
+def get_device_telemetry_data(topic_id=None, limit_per_device=5):
+    """
+    Get telemetry data organized by device with improved limit handling.
+    
+    Args:
+        topic_id (int, optional): Filter by topic ID
+        limit_per_device (int, optional): Maximum number of telemetry records per device
+        
+    Returns:
+        dict: A dictionary with device_id as keys and device info + telemetry as values
+    """
+    conn = get_db_connection()
+    
+    # Get all devices
+    devices = get_all_devices()
+    
+    # Get all topics for reference
+    all_topics = get_all_topics()
+    
+    # Get all clients for reference
+    all_clients = get_all_clients()
+    
+    # Dictionary to store results
+    device_data = {}
+    
+    # Get data for each device
+    for device in devices:
+        if device:
+            # Build the query for telemetry data
+            query = '''
+                SELECT t.*, tp.name as topic_name 
+                FROM telemetry t
+                LEFT JOIN topics tp ON t.topic_id = tp.id
+                WHERE t.device_id = ?
+            '''
+            params = [device['id']]
+            
+            # Add topic filter if specified
+            if topic_id is not None:
+                query += ' AND t.topic_id = ?'
+                params.append(topic_id)
+            
+            # Add ordering and limit
+            query += ' ORDER BY t.timestamp DESC LIMIT ?'
+            params.append(limit_per_device)
+            
+            # Execute query
+            telemetry = conn.execute(query, params).fetchall()
+            telemetry = [dict(row) for row in telemetry]
+            
+            if telemetry:
+                # Find client info for this device
+                client = next((c for c in all_clients if c['id'] == device['client_id']), None)
+                
+                # Find all topics this device has sent data to
+                device_topics = []
+                topic_ids = set()
+                for item in telemetry:
+                    if item['topic_id'] not in topic_ids:
+                        topic_ids.add(item['topic_id'])
+                        topic = next((t for t in all_topics if t['id'] == item['topic_id']), None)
+                        if topic:
+                            device_topics.append(topic)
+                
+                device_data[device['id']] = {
+                    'device': device,
+                    'client': client,
+                    'topics': device_topics,
+                    'telemetry': telemetry
+                }
+    
+    conn.close()
+    return device_data

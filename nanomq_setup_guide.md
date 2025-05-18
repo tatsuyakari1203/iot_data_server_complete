@@ -131,7 +131,7 @@ client.on_message = on_message
 # client.username_pw_set("username", "password")
 
 # Kết nối đến broker
-client.connect("localhost", 1883, 60)
+client.connect("iot.karis.cloud", 1883, 60)
 
 # Gửi dữ liệu
 client.publish("my_device/temperature", '{"temperature": 25.5, "api_key": "your_api_key"}')

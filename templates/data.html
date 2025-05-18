@@ -262,10 +262,35 @@
 <div class="container-fluid">
     <h2 class="mt-3 mb-4">Telemetry Data</h2>
     
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="position-fixed top-0 start-0 w-100 h-100 d-none" style="background-color: rgba(0,0,0,0.3); z-index: 9999; display: flex; justify-content: center; align-items: center;">
+        <div class="bg-white p-4 rounded shadow-sm">
+            <div class="d-flex align-items-center">
+                <div class="spinner-border text-primary me-3" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <div>
+                    <h5 class="mb-0" id="loadingMessage">Exporting data...</h5>
+                    <small class="text-muted" id="loadingDetails">This may take a moment</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <!-- Filter Form -->
     <div class="card mb-4">
-        <div class="card-header">
+        <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Filter Data</h5>
+            <div class="text-end">
+                <span class="badge rounded-pill bg-primary">
+                    <span id="dataCount">{{ device_data|length }}</span> Devices
+                </span>
+                {% if selected_topic %}
+                <span class="badge rounded-pill bg-success">
+                    Topic: {{ topics|selectattr('id', 'equalto', selected_topic)|map(attribute='name')|first }}
+                </span>
+                {% endif %}
+            </div>
         </div>
         <div class="card-body">
             <form method="get" class="row g-3">
@@ -367,9 +392,16 @@
                         <!-- Data Records Title -->
                         <div class="data-records-header d-flex justify-content-between align-items-center">
                             <h6 class="mb-0">Data Records</h6>
+                            <div>
                             <button class="btn btn-sm btn-outline-primary device-export" data-device-id="{{ device_id }}">
-                                <i class="fas fa-download me-1"></i>Export Data
+                                    <i class="fas fa-download me-1"></i>Export All
                             </button>
+                                {% if selected_topic %}
+                                <button class="btn btn-sm btn-outline-secondary device-topic-export" data-device-id="{{ device_id }}" data-topic-id="{{ selected_topic }}">
+                                    <i class="fas fa-file-export me-1"></i>Export Topic
+                                </button>
+                                {% endif %}
+                            </div>
                         </div>
                         
                         <!-- Data Records -->
@@ -446,9 +478,14 @@
         <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0">All Records</h5>
             <div>
-                <button id="exportCsvBtn" class="btn btn-sm btn-outline-secondary">
-                    <i class="fas fa-file-export me-1"></i>Export CSV
+                <button id="exportCsvBtn" class="btn btn-sm btn-outline-secondary me-1">
+                    <i class="fas fa-file-export me-1"></i>Export All CSV
                 </button>
+                {% if selected_topic %}
+                <button id="exportTopicCsvBtn" class="btn btn-sm btn-outline-primary me-1" data-topic-id="{{ selected_topic }}">
+                    <i class="fas fa-file-export me-1"></i>Export Topic CSV
+                </button>
+                {% endif %}
                 <form action="{{ url_for('cleanup_data_route') }}" method="POST" class="d-inline">
                     <button type="submit" class="btn btn-sm btn-outline-warning" onclick="return confirm('Are you sure you want to clean up orphaned data?');">
                         <i class="fas fa-broom me-1"></i>Clean Up Orphaned Data
@@ -585,6 +622,7 @@ $(document).ready(function() {
         };
         
         // Initialize with current data
+        try {
         {% if device_data %}
         currentDeviceData = {{ device_data|tojson }};
         {% endif %}
@@ -593,10 +631,24 @@ $(document).ready(function() {
         currentAllData = {{ data|tojson }};
         {% endif %}
         
-        // Initialize device data map for pagination
+            // Kiểm tra và khởi tạo device data map cho pagination và export
+            console.log("Khởi tạo deviceDataMap từ dữ liệu ban đầu");
+            if (currentDeviceData && typeof currentDeviceData === 'object') {
         Object.entries(currentDeviceData).forEach(([deviceId, info]) => {
+                    if (info && Array.isArray(info.telemetry)) {
             deviceDataMap.set(deviceId, info.telemetry);
-        });
+                        console.log(`- Đã tải dữ liệu cho thiết bị ID: ${deviceId}, ${info.telemetry.length} bản ghi`);
+                    } else {
+                        console.warn(`- Không có dữ liệu telemetry hợp lệ cho thiết bị ID: ${deviceId}`);
+                        deviceDataMap.set(deviceId, []);
+                    }
+                });
+            } else {
+                console.warn("Không có dữ liệu thiết bị ban đầu");
+            }
+        } catch (error) {
+            console.error("Lỗi khi khởi tạo dữ liệu:", error);
+        }
         
         // Function to update device cards with real-time data
         async function updateDeviceCards() {
@@ -682,7 +734,7 @@ $(document).ready(function() {
                 deviceCard.find('.last-value-content').text(lastValueText);
             }
             
-            // Store the device's full telemetry data for pagination
+            // Store the device's full telemetry data for pagination and full export
             // This ensures pagination works correctly during real-time updates
             deviceDataMap.set(deviceId, info.telemetry);
             
@@ -701,14 +753,37 @@ $(document).ready(function() {
         // Initialize device data pagination
         function initDevicePagination(deviceId, preservePage) {
             const deviceCard = $(`#device-${deviceId}`);
-            if (!deviceCard.length) return;
+            if (!deviceCard.length) {
+                console.warn(`Không tìm thấy card cho thiết bị ID: ${deviceId}`);
+                return;
+            }
             
             const tableBody = deviceCard.find('.device-data-tbody');
             const paginationContainer = deviceCard.find('.device-pagination');
             const rowsPerPage = 5;
             
-            // Get telemetry data for this device
-            const telemetryData = deviceDataMap.get(deviceId) || [];
+            // Kiểm tra và lấy dữ liệu cho thiết bị này
+            let telemetryData = [];
+            
+            // Nếu deviceDataMap có dữ liệu cho thiết bị này, sử dụng nó
+            if (deviceDataMap && deviceDataMap.has(deviceId)) {
+                telemetryData = deviceDataMap.get(deviceId) || [];
+            }
+            // Nếu không có dữ liệu trong deviceDataMap, thử lấy từ currentDeviceData
+            else if (currentDeviceData && currentDeviceData[deviceId] && 
+                     currentDeviceData[deviceId].telemetry) {
+                telemetryData = currentDeviceData[deviceId].telemetry;
+                // Cập nhật deviceDataMap để sử dụng sau này
+                if (deviceDataMap) {
+                    deviceDataMap.set(deviceId, telemetryData);
+                }
+            }
+            
+            // Đảm bảo telemetryData là một mảng hợp lệ
+            if (!Array.isArray(telemetryData)) {
+                console.error(`Dữ liệu telemetry cho thiết bị ID: ${deviceId} không phải là mảng`);
+                telemetryData = [];
+            }
             
             // Initialize or get pagination state
             if (!devicePaginationState[deviceId]) {
@@ -723,14 +798,26 @@ $(document).ready(function() {
             devicePaginationState[deviceId].currentPage = currentPage;
             
             // Calculate pagination
-            const totalPages = Math.ceil(telemetryData.length / rowsPerPage);
-            const startIndex = (currentPage - 1) * rowsPerPage;
-            const endIndex = startIndex + rowsPerPage;
+            const totalPages = Math.max(1, Math.ceil(telemetryData.length / rowsPerPage));
+            
+            // Đảm bảo trang hiện tại không vượt quá tổng số trang
+            const validatedCurrentPage = Math.min(currentPage, totalPages);
+            if (validatedCurrentPage !== currentPage) {
+                devicePaginationState[deviceId].currentPage = validatedCurrentPage;
+            }
+            
+            const startIndex = (validatedCurrentPage - 1) * rowsPerPage;
+            const endIndex = Math.min(startIndex + rowsPerPage, telemetryData.length);
             const displayData = telemetryData.slice(startIndex, endIndex);
             
             // Update table with current page data
             tableBody.empty();
+            
+            if (displayData.length === 0) {
+                tableBody.append('<tr><td colspan="3" class="text-center">Không có dữ liệu để hiển thị</td></tr>');
+            } else {
             displayData.forEach(item => {
+                    try {
                 const timestamp = moment(item.timestamp).format('YYYY-MM-DD HH:mm:ss');
                 const topicName = item.topic_name || 'Unknown';
                 
@@ -742,6 +829,8 @@ $(document).ready(function() {
                     } catch {
                         payloadText = item.payload;
                     }
+                        } else if (item.payload === null || item.payload === undefined) {
+                            payloadText = '';
                 } else {
                     payloadText = JSON.stringify(item.payload, null, 2);
                 }
@@ -756,7 +845,20 @@ $(document).ready(function() {
                 </tr>`;
                 
                 tableBody.append(row);
-            });
+                    } catch (error) {
+                        console.error("Lỗi khi hiển thị dữ liệu:", error, item);
+                        const row = `
+                        <tr>
+                            <td class="timestamp-column">${item.timestamp ? moment(item.timestamp).format('YYYY-MM-DD HH:mm:ss') : 'N/A'}</td>
+                            <td class="topic-column">${item.topic_name || 'Unknown'}</td>
+                            <td class="payload-column payload-cell">
+                                <pre>Lỗi hiển thị dữ liệu</pre>
+                            </td>
+                        </tr>`;
+                        tableBody.append(row);
+                    }
+                });
+            }
             
             // Update pagination UI
             paginationContainer.empty();
@@ -767,8 +869,8 @@ $(document).ready(function() {
             // Create pagination controls
             let paginationHtml = `
             <ul class="pagination pagination-sm justify-content-center">
-                <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
-                    <a class="page-link" href="javascript:void(0)" data-page="${currentPage - 1}" aria-label="Previous">
+                <li class="page-item ${validatedCurrentPage === 1 ? 'disabled' : ''}">
+                    <a class="page-link" href="javascript:void(0)" data-page="${validatedCurrentPage - 1}" aria-label="Previous">
                         <span aria-hidden="true">&laquo;</span>
                     </a>
                 </li>`;
@@ -776,14 +878,14 @@ $(document).ready(function() {
             // Page numbers
             for (let i = 1; i <= totalPages; i++) {
                 paginationHtml += `
-                <li class="page-item ${i === currentPage ? 'active' : ''}">
+                <li class="page-item ${i === validatedCurrentPage ? 'active' : ''}">
                     <a class="page-link" href="javascript:void(0)" data-page="${i}">${i}</a>
                 </li>`;
             }
             
             paginationHtml += `
-                <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
-                    <a class="page-link" href="javascript:void(0)" data-page="${currentPage + 1}" aria-label="Next">
+                <li class="page-item ${validatedCurrentPage === totalPages ? 'disabled' : ''}">
+                    <a class="page-link" href="javascript:void(0)" data-page="${validatedCurrentPage + 1}" aria-label="Next">
                         <span aria-hidden="true">&raquo;</span>
                     </a>
                 </li>
@@ -796,11 +898,13 @@ $(document).ready(function() {
                 e.preventDefault();
                 const page = parseInt($(this).data('page'));
                 
+                // Chỉ xử lý khi page là số hợp lệ
+                if (!isNaN(page) && page > 0 && page <= totalPages) {
                 // Update state
                 devicePaginationState[deviceId].currentPage = page;
-                
-                // Reinitialize with new page
-                initDevicePagination(deviceId);
+                    // Redraw table
+                    initDevicePagination(deviceId, page);
+                }
             });
         }
         
@@ -961,50 +1065,376 @@ $(document).ready(function() {
             updateAllDataTableWithPagination();
         }
         
-        // Start real-time updates
-        setInterval(updateDeviceCards, config.updateInterval);
-        setInterval(updateAllDataTable, config.updateInterval);
-        
         // CSV Export functionality
         function setupCsvExport() {
-            $('.export-csv-btn').on('click', function() {
-                const targetTable = $(this).data('target');
-                const filename = $(this).data('filename');
-                
-                // Get table data
+            // Sửa selector để nhắm đúng ID của nút export chung
+            $('#exportCsvBtn').on('click', function() {
+                const targetTable = '#all-data-table'; // Nhắm vào bảng "All Records"
+                const filename = 'all_records_export.csv'; // Đặt tên file mặc định
+
+                // Kiểm tra xem bảng có tồn tại không
+                if ($(targetTable).length === 0) {
+                    alert('Lỗi: Không tìm thấy bảng dữ liệu "All Records".');
+                    return;
+                }
+
                 const rows = [];
                 const headers = [];
                 
-                // Get headers
+                // Lấy headers từ thead của bảng
                 $(`${targetTable} thead th`).each(function() {
                     headers.push($(this).text().trim());
                 });
                 rows.push(headers);
                 
-                // Get data rows
+                // Lấy dữ liệu từ các hàng trong tbody của bảng
+                let dataFound = false;
                 $(`${targetTable} tbody tr`).each(function() {
+                    // Chỉ lấy các hàng đang hiển thị (không bị display: none do phân trang)
+                    if ($(this).is(":visible")) {
                     const row = [];
                     $(this).find('td').each(function() {
-                        // For payload cells with pre tags, get the text content
-                        if ($(this).hasClass('payload-cell')) {
-                            row.push($(this).find('pre').text().trim());
+                            let cellText = '';
+                            // Đặc biệt xử lý cho cột payload có thể chứa thẻ <pre><code>
+                            if ($(this).find('pre code').length > 0) {
+                                cellText = $(this).find('pre code').text().trim();
                         } else {
-                            row.push($(this).text().trim());
+                                cellText = $(this).text().trim();
                         }
+                            row.push(cellText);
                     });
                     rows.push(row);
+                        dataFound = true;
+                    }
                 });
+
+                if (!dataFound) {
+                    hideLoading();
+                    showError('Không có dữ liệu hiển thị để xuất cho thiết bị này.');
+                    return;
+                }
                 
                 // Convert to CSV
                 let csvContent = "data:text/csv;charset=utf-8,";
-                
                 rows.forEach(function(rowArray) {
                     const row = rowArray.map(function(cell) {
-                        // Escape quotes and wrap in quotes if contains comma
-                        if (cell.includes(',') || cell.includes('"') || cell.includes('\n')) {
-                            return '"' + cell.replace(/"/g, '""') + '"';
+                        let processedCell = cell.toString().replace(/"/g, '""');
+                        if (processedCell.includes(',') || processedCell.includes('"') || processedCell.includes('\n')) {
+                            processedCell = '"' + processedCell + '"';
                         }
-                        return cell;
+                        return processedCell;
+                    }).join(",");
+                    csvContent += row + "\r\n";
+                });
+
+                // Create download link
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", filename);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                hideLoading();
+                showSuccess(`CSV đã được xuất thành công: ${filename}`);
+            });
+
+            // Thiết lập listener cho nút xuất CSV cho topic cụ thể
+            $('#exportTopicCsvBtn').on('click', async function() {
+                const topicId = $(this).data('topic-id');
+                const topicName = getTopicNameById(topicId);
+                const filename = `topic_${topicName ? topicName.replace(/\s+/g, '_') : topicId}_export.csv`;
+                
+                try {
+                    // Hiển thị thông báo đang tải dữ liệu
+                    const loadingMessage = $('<div class="alert alert-info position-fixed top-50 start-50 translate-middle p-3">Đang tải dữ liệu...</div>');
+                    $('body').append(loadingMessage);
+                    
+                    // Tải tất cả dữ liệu cho topic này
+                    const data = await fetchTopicData(topicId);
+                    
+                    // Xuất CSV khi có dữ liệu
+                    exportTopicData(data, filename, topicId);
+                    
+                    // Xóa thông báo tải
+                    loadingMessage.remove();
+                } catch (error) {
+                    console.error('Lỗi khi xuất dữ liệu topic:', error);
+                    alert('Có lỗi xảy ra khi xuất dữ liệu. Vui lòng thử lại.');
+                    $('body').find('.alert-info').remove();
+                }
+            });
+        }
+
+        // Hàm lấy tên topic từ ID
+        function getTopicNameById(topicId) {
+            let topicName = 'unknown';
+            {% for topic in topics %}
+            if ({{ topic.id }} === parseInt(topicId)) {
+                topicName = '{{ topic.name }}';
+            }
+            {% endfor %}
+            return topicName;
+        }
+
+        // Hàm tải tất cả dữ liệu cho một topic cụ thể
+        async function fetchTopicData(topicId) {
+            if (!topicId) {
+                throw new Error('Topic ID không hợp lệ');
+            }
+            
+            console.log(`Đang tải dữ liệu cho topic ID: ${topicId}`);
+            
+            try {
+                // Tải dữ liệu thiết bị (bao gồm cả thiết bị hiện tại không hiển thị)
+                const responseDevices = await fetch(`/api/device_data?topic_id=${topicId}&limit=1000`);
+                if (!responseDevices.ok) throw new Error('Không thể tải dữ liệu thiết bị');
+                const devicesData = await responseDevices.json();
+                
+                // Tải tất cả dữ liệu
+                const responseAll = await fetch(`/api/latest_data?topic_id=${topicId}&limit=1000`);
+                if (!responseAll.ok) throw new Error('Không thể tải dữ liệu chung');
+                const allData = await responseAll.json();
+                
+                // Kết hợp dữ liệu
+                return {
+                    deviceData: devicesData.device_data || {},
+                    allData: allData.latest_data || []
+                };
+            } catch (error) {
+                console.error('Lỗi khi tải dữ liệu:', error);
+                throw error;
+            }
+        }
+
+        // Hàm xuất dữ liệu theo topic thành CSV
+        function exportTopicData(data, filename, topicId) {
+            // Kiểm tra dữ liệu
+            if (!data || (!Object.keys(data.deviceData).length && !data.allData.length)) {
+                alert(`Không tìm thấy dữ liệu cho topic ID: ${topicId}`);
+                return;
+            }
+            
+            // Tạo mảng dữ liệu CSV
+            const rows = [];
+            const headers = ['ID', 'Timestamp', 'Device', 'Topic', 'Payload'];
+            rows.push(headers);
+            
+            // Thêm dữ liệu từ allData
+            const processedIds = new Set(); // Theo dõi các ID đã xử lý
+            
+            data.allData.forEach(item => {
+                if (item.topic_id != topicId) return; // Chỉ lấy dữ liệu cho topic được chọn
+                
+                processedIds.add(item.id);
+                
+                const row = [];
+                row.push(item.id);
+                row.push(moment(item.timestamp).format('YYYY-MM-DD HH:mm:ss'));
+                row.push(`${item.device_name || 'Unknown'} (ID: ${item.device_id})`);
+                row.push(`${item.topic_name || 'Unknown'} (ID: ${item.topic_id})`);
+                
+                let payloadText = '';
+                if (typeof item.payload === 'string') {
+                    try {
+                        const payloadObj = JSON.parse(item.payload);
+                        payloadText = JSON.stringify(payloadObj);
+                    } catch (e) {
+                        payloadText = item.payload;
+                    }
+                } else if (item.payload !== null && item.payload !== undefined) {
+                    payloadText = JSON.stringify(item.payload);
+                }
+                
+                row.push(payloadText);
+                rows.push(row);
+            });
+            
+            // Thêm dữ liệu từ deviceData nếu có mục nào chưa được xử lý
+            Object.values(data.deviceData).forEach(device => {
+                if (device.telemetry && Array.isArray(device.telemetry)) {
+                    device.telemetry.forEach(item => {
+                        if (item.topic_id != topicId) return; // Chỉ lấy dữ liệu cho topic được chọn
+                        if (processedIds.has(item.id)) return; // Bỏ qua nếu đã xử lý
+                        
+                        const row = [];
+                        row.push(item.id);
+                        row.push(moment(item.timestamp).format('YYYY-MM-DD HH:mm:ss'));
+                        row.push(`${device.device.name || 'Unknown'} (ID: ${device.device.id})`);
+                        row.push(`${item.topic_name || 'Unknown'} (ID: ${item.topic_id})`);
+                        
+                        let payloadText = '';
+                        if (typeof item.payload === 'string') {
+                            try {
+                                const payloadObj = JSON.parse(item.payload);
+                                payloadText = JSON.stringify(payloadObj);
+                            } catch (e) {
+                                payloadText = item.payload;
+                            }
+                        } else if (item.payload !== null && item.payload !== undefined) {
+                            payloadText = JSON.stringify(item.payload);
+                        }
+                        
+                        row.push(payloadText);
+                        rows.push(row);
+                    });
+                }
+            });
+            
+            if (rows.length <= 1) {
+                alert(`Không có dữ liệu CSV để xuất cho topic ID: ${topicId}`);
+                return;
+            }
+            
+            // Sắp xếp theo ID (giảm dần) để có dữ liệu mới nhất trước
+            rows.slice(1).sort((a, b) => b[0] - a[0]);
+            
+            // Tạo nội dung CSV
+            let csvContent = "data:text/csv;charset=utf-8,";
+                rows.forEach(function(rowArray) {
+                    const row = rowArray.map(function(cell) {
+                    let processedCell = (cell === null || cell === undefined) ? '' : cell.toString();
+                    processedCell = processedCell.replace(/"/g, '""');
+                    if (processedCell.includes(',') || processedCell.includes('"') || processedCell.includes('\n')) {
+                        processedCell = '"' + processedCell + '"';
+                    }
+                    return processedCell;
+                }).join(",");
+                csvContent += row + "\r\n";
+            });
+            
+            // Tạo và kích hoạt liên kết tải xuống
+            try {
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", filename);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                console.log(`Đã xuất ${rows.length - 1} bản ghi cho topic ID: ${topicId}`);
+            } catch (error) {
+                console.error("Lỗi khi tạo tệp CSV:", error);
+                alert("Có lỗi xảy ra khi tạo tệp CSV. Vui lòng thử lại sau.");
+            }
+        }
+        
+        // Helper functions for loading overlay
+        function showLoading(message, details) {
+            $('#loadingMessage').text(message || 'Processing...');
+            $('#loadingDetails').text(details || 'Please wait');
+            $('#loadingOverlay').removeClass('d-none');
+        }
+        
+        function hideLoading() {
+            $('#loadingOverlay').addClass('d-none');
+        }
+        
+        // Error handling helper
+        function showError(message, duration = 5000) {
+            const alertHtml = `
+                <div class="alert alert-danger alert-dismissible fade show position-fixed top-0 end-0 m-3" style="z-index:9999" role="alert">
+                    <strong>Error!</strong> ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `;
+            const alert = $(alertHtml);
+            $('body').append(alert);
+            
+            setTimeout(() => {
+                alert.alert('close');
+            }, duration);
+        }
+        
+        // Success message helper
+        function showSuccess(message, duration = 3000) {
+            const alertHtml = `
+                <div class="alert alert-success alert-dismissible fade show position-fixed top-0 end-0 m-3" style="z-index:9999" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `;
+            const alert = $(alertHtml);
+            $('body').append(alert);
+            
+            setTimeout(() => {
+                alert.alert('close');
+            }, duration);
+        }
+        
+        // Enhanced function to fetch data with error handling and retry
+        async function fetchWithRetry(url, options = {}, retries = 2, retryDelay = 1000) {
+            try {
+                const response = await fetch(url, options);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return await response.json();
+            } catch (error) {
+                if (retries > 0) {
+                    console.warn(`Fetch failed, retrying... (${retries} attempts left)`);
+                    await new Promise(resolve => setTimeout(resolve, retryDelay));
+                    return fetchWithRetry(url, options, retries - 1, retryDelay * 1.5);
+                }
+                throw error;
+            }
+        }
+
+        // Hàm helper chung để tạo và tải CSV từ dữ liệu bảng
+        function exportTableDataToCsv(tableSelector, filename) {
+            try {
+                if ($(tableSelector).length === 0) {
+                    showError(`Không tìm thấy bảng dữ liệu với selector "${tableSelector}".`);
+                    return;
+                }
+
+                showLoading('Đang tạo CSV...', 'Đang xử lý dữ liệu từ bảng');
+                
+                const rows = [];
+                const headers = [];
+
+                // Lấy headers
+                $(`${tableSelector} thead th`).each(function() {
+                    headers.push($(this).text().trim());
+                });
+                rows.push(headers);
+
+                // Lấy dữ liệu từ các hàng trong tbody của bảng được chỉ định
+                let dataFound = false;
+                $(`${tableSelector} tbody tr`).each(function() {
+                    if ($(this).is(":visible")) { // Chỉ các hàng đang hiển thị
+                        const row = [];
+                        $(this).find('td').each(function() {
+                            let cellText = '';
+                            if ($(this).find('pre code').length > 0) {
+                                cellText = $(this).find('pre code').text().trim();
+                            } else {
+                                cellText = $(this).text().trim();
+                            }
+                            row.push(cellText);
+                        });
+                        rows.push(row);
+                        dataFound = true;
+                    }
+                });
+
+                if (!dataFound) {
+                    hideLoading();
+                    showError('Không có dữ liệu hiển thị để xuất cho thiết bị này.');
+                    return;
+                }
+
+                // Convert to CSV
+                let csvContent = "data:text/csv;charset=utf-8,";
+                rows.forEach(function(rowArray) {
+                    const row = rowArray.map(function(cell) {
+                        let processedCell = cell.toString().replace(/"/g, '""');
+                        if (processedCell.includes(',') || processedCell.includes('"') || processedCell.includes('\n')) {
+                            processedCell = '"' + processedCell + '"';
+                        }
+                        return processedCell;
                     }).join(",");
                     csvContent += row + "\r\n";
                 });
@@ -1017,11 +1447,322 @@ $(document).ready(function() {
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
+                
+                hideLoading();
+                showSuccess(`CSV đã được xuất thành công: ${filename}`);
+            } catch (error) {
+                console.error("Lỗi khi xuất CSV:", error);
+                hideLoading();
+                showError("Lỗi khi xuất CSV: " + error.message);
+            }
+        }
+
+        // Export all device data from the deviceDataMap
+        function exportAllDeviceDataFromMap(deviceId, filename) {
+            try {
+                showLoading('Đang xuất dữ liệu thiết bị...', `Đang xử lý dữ liệu cho thiết bị ID: ${deviceId}`);
+                
+                // Kiểm tra deviceDataMap đã được khởi tạo chưa
+                if (typeof deviceDataMap === 'undefined') {
+                    console.error("deviceDataMap chưa được khởi tạo");
+                    hideLoading();
+                    showError("Không thể truy cập dữ liệu thiết bị. Vui lòng làm mới trang và thử lại.");
+                    return;
+                }
+
+                // Kiểm tra xem có dữ liệu cho thiết bị này không
+                if (!deviceDataMap.has(deviceId)) {
+                    console.error(`deviceDataMap không có dữ liệu cho thiết bị ID: ${deviceId}`);
+                    hideLoading();
+                    showError(`Không tìm thấy dữ liệu đầy đủ cho thiết bị ID: ${deviceId}. Hãy chờ dữ liệu được tải hoặc làm mới trang.`);
+                    return;
+                }
+
+                const telemetryData = deviceDataMap.get(deviceId); // Đây là mảng các object telemetry
+                
+                // Kiểm tra dữ liệu telemetry có hợp lệ và có phần tử nào không
+                if (!telemetryData || !Array.isArray(telemetryData) || telemetryData.length === 0) {
+                    console.error(`Không có dữ liệu telemetry hợp lệ cho thiết bị ID: ${deviceId}`);
+                    hideLoading();
+                    showError('Không có dữ liệu telemetry để xuất cho thiết bị này.');
+                    return;
+                }
+
+                // Từ đây là thực hiện xuất dữ liệu CSV như bình thường
+                const rows = [];
+                // Xác định headers
+                const headers = ['Timestamp', 'Topic Name', 'Payload Value', 'Payload Unit']; 
+                rows.push(headers);
+
+                // Phân tích dữ liệu có cấu trúc tốt hơn
+                telemetryData.forEach(item => {
+                    try {
+                        const row = [];
+                        row.push(moment(item.timestamp).format('YYYY-MM-DD HH:mm:ss'));
+                        row.push(item.topic_name || item.topic_id); // Sử dụng topic_name nếu có
+
+                        // Xử lý payload dựa trên loại dữ liệu
+                        let payloadValue = '';
+                        let payloadUnit = '';
+
+                        if (typeof item.payload === 'string') {
+                            try {
+                                // Thử phân tích payload dạng chuỗi JSON
+                                const payloadObj = JSON.parse(item.payload);
+                                if (payloadObj && typeof payloadObj === 'object') {
+                                    if (payloadObj.value !== undefined) {
+                                        payloadValue = payloadObj.value;
+                                        payloadUnit = payloadObj.unit || '';
+                                    } else {
+                                        // Trường hợp đối tượng không có thuộc tính value
+                                        payloadValue = JSON.stringify(payloadObj);
+                                    }
+                                } else {
+                                    payloadValue = item.payload;
+                                }
+                            } catch (e) {
+                                // Nếu không phải JSON, sử dụng giá trị chuỗi gốc
+                                payloadValue = item.payload;
+                            }
+                        } else if (item.payload && typeof item.payload === 'object') {
+                            // Lấy 'value' và 'unit' nếu có
+                            payloadValue = item.payload.value !== undefined ? item.payload.value : JSON.stringify(item.payload);
+                            payloadUnit = item.payload.unit !== undefined ? item.payload.unit : '';
+                        } else {
+                            // Trường hợp payload là kiểu dữ liệu khác
+                            payloadValue = item.payload !== null && item.payload !== undefined ? String(item.payload) : '';
+                        }
+
+                        row.push(payloadValue);
+                        row.push(payloadUnit);
+                        rows.push(row);
+                    } catch (error) {
+                        console.error('Lỗi khi xử lý dữ liệu telemetry:', error, item);
+                        const row = [
+                            item.timestamp ? moment(item.timestamp).format('YYYY-MM-DD HH:mm:ss') : 'N/A',
+                            item.topic_name || item.topic_id || 'N/A',
+                            'Lỗi xử lý dữ liệu',
+                            ''
+                        ];
+                        rows.push(row);
+                    }
+                });
+
+                if (rows.length <= 1) { // Chỉ có header, không có dữ liệu
+                    hideLoading();
+                    showError('Không có dữ liệu để xuất.');
+                    return;
+                }
+
+                // Tạo nội dung CSV
+                let csvContent = "data:text/csv;charset=utf-8,";
+                rows.forEach(function(rowArray) {
+                    const row = rowArray.map(function(cell) {
+                        let processedCell = (cell === null || cell === undefined) ? '' : cell.toString();
+                        processedCell = processedCell.replace(/"/g, '""');
+                        if (processedCell.includes(',') || processedCell.includes('"') || processedCell.includes('\n')) {
+                            processedCell = '"' + processedCell + '"';
+                        }
+                        return processedCell;
+                    }).join(",");
+                    csvContent += row + "\r\n";
+                });
+                
+                // Tạo và kích hoạt liên kết tải xuống
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", filename);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                hideLoading();
+                showSuccess(`Đã xuất ${rows.length - 1} bản ghi cho thiết bị thành công.`);
+            } catch (error) {
+                console.error("Lỗi khi tạo tệp CSV:", error);
+                hideLoading();
+                showError("Có lỗi xảy ra khi tạo tệp CSV. Vui lòng thử lại sau.");
+            }
+        }
+        
+        // Hàm thiết lập export cho từng thiết bị
+        function setupPerDeviceCsvExport() {
+            // Sử dụng event delegation cho các nút .device-export được thêm động
+            $('#device-cards').on('click', '.device-export', function() {
+                const deviceId = $(this).data('device-id');
+                const deviceName = $(this).closest('.device-card').find('.device-title h5').text().trim() || deviceId;
+                
+                // Kiểm tra nếu thiết bị có dữ liệu trong deviceDataMap
+                if (typeof deviceDataMap === 'undefined' || !deviceDataMap.has(deviceId)) {
+                    // Nếu deviceDataMap chưa được khởi tạo, thử tìm từ currentDeviceData
+                    if (currentDeviceData && currentDeviceData[deviceId] && currentDeviceData[deviceId].telemetry) {
+                        // Cập nhật deviceDataMap nếu chưa được khởi tạo nhưng có dữ liệu trong currentDeviceData
+                        deviceDataMap.set(deviceId, currentDeviceData[deviceId].telemetry);
+                    } else {
+                        // Hiển thị thông báo lỗi với hướng dẫn để người dùng biết cách khắc phục
+                        showError(`Không tìm thấy dữ liệu đầy đủ cho thiết bị ID: ${deviceId}. Hãy chờ dữ liệu được tải hoặc làm mới trang.`);
+                        return;
+                    }
+                }
+                
+                // Target bảng dữ liệu cụ thể của thiết bị này
+                const targetTable = `#device-${deviceId} .data-table`;
+                const filename = `device_${deviceName.replace(/\s+/g, '_')}_data.csv`;
+
+                // Gọi hàm xuất toàn bộ dữ liệu từ deviceDataMap thay vì chỉ dữ liệu đang hiển thị
+                exportAllDeviceDataFromMap(deviceId, filename);
+            });
+        }
+        
+        // Hàm thiết lập export theo topic cho từng thiết bị
+        function setupDeviceTopicCsvExport() {
+            // Sử dụng event delegation cho các nút .device-topic-export được thêm động
+            $('#device-cards').on('click', '.device-topic-export', async function() {
+                const deviceId = $(this).data('device-id');
+                const topicId = $(this).data('topic-id');
+                const deviceName = $(this).closest('.device-card').find('.device-title h5').text().trim() || deviceId;
+                const topicName = getTopicNameById(topicId);
+                
+                showLoading('Đang xuất dữ liệu theo topic...', `Đang xử lý dữ liệu cho thiết bị ${deviceName} và topic ${topicName}`);
+                
+                try {
+                    const filename = `device_${deviceName.replace(/\s+/g, '_')}_topic_${topicName.replace(/\s+/g, '_')}_data.csv`;
+                    
+                    // Kiểm tra nếu thiết bị có dữ liệu trong deviceDataMap
+                    if (typeof deviceDataMap === 'undefined' || !deviceDataMap.has(deviceId)) {
+                        // Thử lấy dữ liệu từ currentDeviceData
+                        if (currentDeviceData && currentDeviceData[deviceId] && currentDeviceData[deviceId].telemetry) {
+                            // Cập nhật deviceDataMap
+                            deviceDataMap.set(deviceId, currentDeviceData[deviceId].telemetry);
+                        } else {
+                            hideLoading();
+                            showError(`Không tìm thấy dữ liệu cho thiết bị ID: ${deviceId}`);
+                            return;
+                        }
+                    }
+                    
+                    // Lấy tất cả dữ liệu telemetry của thiết bị
+                    const telemetryData = deviceDataMap.get(deviceId);
+                    
+                    // Lọc dữ liệu theo topic
+                    const filteredData = telemetryData.filter(item => item.topic_id == topicId);
+                    
+                    if (!filteredData.length) {
+                        hideLoading();
+                        showError(`Không tìm thấy dữ liệu telemetry cho topic ID: ${topicId} trên thiết bị này.`);
+                        return;
+                    }
+                    
+                    // Tạo mảng dữ liệu CSV
+                    const rows = [];
+                    // Xác định headers
+                    const headers = ['ID', 'Timestamp', 'Topic Name', 'Payload Value', 'Payload Unit']; 
+                    rows.push(headers);
+                    
+                    // Xử lý dữ liệu cho mỗi mục
+                    filteredData.forEach(item => {
+                        try {
+                            const row = [];
+                            row.push(item.id || '');
+                            row.push(moment(item.timestamp).format('YYYY-MM-DD HH:mm:ss'));
+                            row.push(item.topic_name || topicName || 'Unknown');
+                            
+                            // Xử lý payload dựa trên loại dữ liệu
+                            let payloadValue = '';
+                            let payloadUnit = '';
+                            
+                            if (typeof item.payload === 'string') {
+                                try {
+                                    // Thử phân tích payload dạng chuỗi JSON
+                                    const payloadObj = JSON.parse(item.payload);
+                                    if (payloadObj && typeof payloadObj === 'object') {
+                                        if (payloadObj.value !== undefined) {
+                                            payloadValue = payloadObj.value;
+                                            payloadUnit = payloadObj.unit || '';
+                                        } else {
+                                            // Trường hợp đối tượng không có thuộc tính value
+                                            payloadValue = JSON.stringify(payloadObj);
+                                        }
+                                    } else {
+                                        payloadValue = item.payload;
+                                    }
+                                } catch (e) {
+                                    // Nếu không phải JSON, sử dụng giá trị chuỗi gốc
+                                    payloadValue = item.payload;
+                                }
+                            } else if (item.payload && typeof item.payload === 'object') {
+                                // Lấy 'value' và 'unit' nếu có
+                                payloadValue = item.payload.value !== undefined ? item.payload.value : JSON.stringify(item.payload);
+                                payloadUnit = item.payload.unit !== undefined ? item.payload.unit : '';
+                            } else {
+                                // Trường hợp payload là kiểu dữ liệu khác
+                                payloadValue = item.payload !== null && item.payload !== undefined ? String(item.payload) : '';
+                            }
+                            
+                            row.push(payloadValue);
+                            row.push(payloadUnit);
+                            rows.push(row);
+                        } catch (error) {
+                            console.error('Lỗi khi xử lý dữ liệu telemetry:', error, item);
+                            const row = [
+                                item.id || '',
+                                item.timestamp ? moment(item.timestamp).format('YYYY-MM-DD HH:mm:ss') : 'N/A',
+                                topicName || 'Unknown',
+                                'Lỗi xử lý dữ liệu',
+                                ''
+                            ];
+                            rows.push(row);
+                        }
+                    });
+                    
+                    if (rows.length <= 1) { // Chỉ có header, không có dữ liệu
+                        hideLoading();
+                        showError('Không có dữ liệu để xuất.');
+                        return;
+                    }
+                    
+                    // Tạo nội dung CSV
+                    let csvContent = "data:text/csv;charset=utf-8,";
+                    rows.forEach(function(rowArray) {
+                        const row = rowArray.map(function(cell) {
+                            let processedCell = (cell === null || cell === undefined) ? '' : cell.toString();
+                            processedCell = processedCell.replace(/"/g, '""');
+                            if (processedCell.includes(',') || processedCell.includes('"') || processedCell.includes('\n')) {
+                                processedCell = '"' + processedCell + '"';
+                            }
+                            return processedCell;
+                        }).join(",");
+                        csvContent += row + "\r\n";
+                    });
+                    
+                    // Tạo và kích hoạt liên kết tải xuống
+                    const encodedUri = encodeURI(csvContent);
+                    const link = document.createElement("a");
+                    link.setAttribute("href", encodedUri);
+                    link.setAttribute("download", filename);
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    hideLoading();
+                    showSuccess(`Đã xuất ${rows.length - 1} bản ghi cho thiết bị ID: ${deviceId} và topic ID: ${topicId}`);
+                } catch (error) {
+                    console.error("Lỗi khi tạo tệp CSV:", error);
+                    hideLoading();
+                    showError("Có lỗi xảy ra khi tạo tệp CSV. Vui lòng thử lại sau.");
+                }
             });
         }
         
         // Initialize export
         setupCsvExport();
+        setupPerDeviceCsvExport();
+        setupDeviceTopicCsvExport();
+        
+        // Start real-time updates
+        setInterval(updateDeviceCards, config.updateInterval);
+        setInterval(updateAllDataTable, config.updateInterval);
         
         // Initialize pagination
         // Call for each device card
