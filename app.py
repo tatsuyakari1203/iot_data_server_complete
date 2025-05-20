@@ -18,9 +18,13 @@ from functools import wraps
 import io
 import csv
 from datetime import datetime
+import pytz
 
 # Load environment variables
 load_dotenv()
+
+# Define Vietnam timezone
+VN_TZ = pytz.timezone('Asia/Ho_Chi_Minh')
 
 # Initialize the Flask application
 app = Flask(__name__)
@@ -267,7 +271,7 @@ def data():
             }
     
     # Add current datetime for CSV export filename
-    now = datetime.now()
+    now = datetime.now(VN_TZ)
     
     # Get all telemetry data for table view and export
     all_telemetry = get_telemetry_data(topic_id=topic_id, limit=100)
@@ -402,7 +406,8 @@ def export_topic_csv(topic_id):
         
         # Ghi dữ liệu
         for item in data:
-            timestamp = datetime.fromisoformat(item['timestamp'].replace('Z', '+00:00')) if 'Z' in item['timestamp'] else datetime.fromisoformat(item['timestamp'])
+            # Parse with timezone awareness if stored with offset, else it's already VN_TZ
+            timestamp = datetime.fromisoformat(item['timestamp'])
             formatted_time = timestamp.strftime('%Y-%m-%d %H:%M:%S')
             
             # Xử lý payload
@@ -477,7 +482,8 @@ def export_device_csv(device_id):
         
         # Ghi dữ liệu
         for item in data:
-            timestamp = datetime.fromisoformat(item['timestamp'].replace('Z', '+00:00')) if 'Z' in item['timestamp'] else datetime.fromisoformat(item['timestamp'])
+            # Parse with timezone awareness if stored with offset, else it's already VN_TZ
+            timestamp = datetime.fromisoformat(item['timestamp'])
             formatted_time = timestamp.strftime('%Y-%m-%d %H:%M:%S')
             
             # Xử lý payload
@@ -556,7 +562,8 @@ def export_device_topic_csv(device_id, topic_id):
         
         # Ghi dữ liệu
         for item in data:
-            timestamp = datetime.fromisoformat(item['timestamp'].replace('Z', '+00:00')) if 'Z' in item['timestamp'] else datetime.fromisoformat(item['timestamp'])
+            # Parse with timezone awareness if stored with offset, else it's already VN_TZ
+            timestamp = datetime.fromisoformat(item['timestamp'])
             formatted_time = timestamp.strftime('%Y-%m-%d %H:%M:%S')
             
             # Xử lý payload
@@ -626,7 +633,8 @@ def export_all_csv():
         
         # Ghi dữ liệu
         for item in data:
-            timestamp = datetime.fromisoformat(item['timestamp'].replace('Z', '+00:00')) if 'Z' in item['timestamp'] else datetime.fromisoformat(item['timestamp'])
+            # Parse with timezone awareness if stored with offset, else it's already VN_TZ
+            timestamp = datetime.fromisoformat(item['timestamp'])
             formatted_time = timestamp.strftime('%Y-%m-%d %H:%M:%S')
             
             device_name = devices.get(item['device_id'], f"Unknown (ID: {item['device_id']})")
@@ -673,9 +681,9 @@ def export_all_csv():
             ])
         
         # Tạo response
-        now = datetime.now().strftime('%Y%m%d_%H%M%S')
+        now_str = datetime.now(VN_TZ).strftime('%Y%m%d_%H%M%S')
         response = make_response(csv_data.getvalue())
-        response.headers["Content-Disposition"] = f"attachment; filename=all_telemetry_data_{now}.csv"
+        response.headers["Content-Disposition"] = f"attachment; filename=all_telemetry_data_{now_str}.csv"
         response.headers["Content-Type"] = "text/csv"
         
         return response

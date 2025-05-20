@@ -4,9 +4,13 @@ import json
 import os
 from datetime import datetime
 from dotenv import load_dotenv
+import pytz
 
 # Load environment variables
 load_dotenv()
+
+# Define Vietnam timezone
+VN_TZ = pytz.timezone('Asia/Ho_Chi_Minh')
 
 # Get database path from environment variable or use default
 DATABASE_PATH = os.getenv('DATABASE_PATH', 'data.db')
@@ -297,7 +301,7 @@ def update_device_last_seen(device_id):
     try:
         conn.execute(
             'UPDATE devices SET last_seen = ? WHERE id = ?',
-            (datetime.now().isoformat(), device_id)
+            (datetime.now(VN_TZ).isoformat(), device_id)
         )
         conn.commit()
         return True
@@ -420,7 +424,7 @@ def store_telemetry_data(device_id, topic_id, payload):
         # Update device's last_seen timestamp
         conn.execute(
             'UPDATE devices SET last_seen = ? WHERE id = ?',
-            (datetime.now().isoformat(), device_id)
+            (datetime.now(VN_TZ).isoformat(), device_id)
         )
         
         # Commit the transaction
