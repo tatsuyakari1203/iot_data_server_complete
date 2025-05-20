@@ -113,6 +113,16 @@ def dashboard():
     
     # Get the latest telemetry data
     latest_data = get_telemetry_data(limit=10)
+    for item in latest_data: # latest_data is a list of dicts
+        if item.get('timestamp'):
+            try:
+                # Assuming timestamp is stored as ISO 8601 with offset
+                dt_obj_aware = datetime.fromisoformat(item['timestamp'])
+                # Format for display, this will use the object's timezone (VN_TZ)
+                item['timestamp'] = dt_obj_aware.strftime('%Y-%m-%d %H:%M:%S')
+            except (ValueError, TypeError):
+                # Keep original if formatting fails (e.g. old data or already formatted)
+                pass # Or set to a default error string: item['timestamp'] = "Invalid date"
     
     # Count statistics
     stats = {
@@ -252,6 +262,7 @@ def devices():
 @login_required
 def data():
     topic_id = request.args.get('topic_id', type=int)
+    limit_per_device_config = 50 # Default limit for chart data per device
     
     # Get all devices
     devices = get_all_devices()
@@ -259,26 +270,37 @@ def data():
     clients = get_all_clients()  # Get all clients
     
     # Initialize device data dictionary to store telemetry data for each device
-    device_data = {}
+    # Use the function get_device_telemetry_data which structures data by device
+    device_data_from_db = get_device_telemetry_data(topic_id=topic_id, limit_per_device=limit_per_device_config)
     
-    # Get data for each device with selected topic if specified
-    for device in devices:
-        telemetry = get_telemetry_data(device_id=device['id'], topic_id=topic_id, limit=50)
-        if telemetry:
-            device_data[device['id']] = {
-                'device': device,
-                'telemetry': telemetry
-            }
+    # Process timestamps in device_data_from_db
+    for dev_id in device_data_from_db:
+        if 'telemetry' in device_data_from_db[dev_id] and device_data_from_db[dev_id]['telemetry']:
+            for tel_item in device_data_from_db[dev_id]['telemetry']:
+                if tel_item.get('timestamp'):
+                    try:
+                        dt_obj_aware = datetime.fromisoformat(tel_item['timestamp'])
+                        tel_item['timestamp'] = dt_obj_aware.strftime('%Y-%m-%d %H:%M:%S')
+                    except (ValueError, TypeError):
+                        pass
     
     # Add current datetime for CSV export filename
-    now = datetime.now(VN_TZ)
+    now = datetime.now(VN_TZ) # Use VN_TZ
     
     # Get all telemetry data for table view and export
-    all_telemetry = get_telemetry_data(topic_id=topic_id, limit=100)
+    all_telemetry_for_table = get_telemetry_data(topic_id=topic_id, limit=100)
+    # Process timestamps in all_telemetry_for_table
+    for item in all_telemetry_for_table:
+        if item.get('timestamp'):
+            try:
+                dt_obj_aware = datetime.fromisoformat(item['timestamp'])
+                item['timestamp'] = dt_obj_aware.strftime('%Y-%m-%d %H:%M:%S')
+            except (ValueError, TypeError):
+                pass
     
     return render_template('data.html', 
-                         device_data=device_data,
-                         data=all_telemetry,
+                         device_data=device_data_from_db, # Pass the processed data
+                         data=all_telemetry_for_table, # Pass the processed data for table
                          devices=devices, 
                          topics=topics, 
                          clients=clients,  # Pass clients to the template
@@ -329,6 +351,13 @@ def api_latest_data():
                 item['payload'] = json.loads(item['payload'])
         except (json.JSONDecodeError, TypeError):
             pass
+        # Process timestamp for API consistency
+        if item.get('timestamp'):
+            try:
+                dt_obj_aware = datetime.fromisoformat(item['timestamp'])
+                item['timestamp'] = dt_obj_aware.strftime('%Y-%m-%d %H:%M:%S')
+            except (ValueError, TypeError):
+                pass # Keep original if formatting fails
     
     return jsonify({'latest_data': latest_data})
 
@@ -357,13 +386,21 @@ def api_device_data():
     device_data = get_device_telemetry_data(topic_id=topic_id, limit_per_device=limit)
     
     # Process payload - convert JSON strings to objects if possible
-    for device_id, info in device_data.items():
+    # And process timestamps for API consistency
+    for device_id_key, info in device_data.items(): # Use device_id_key to avoid conflict
         for item in info.get('telemetry', []):
             try:
                 if isinstance(item.get('payload'), str):
                     item['payload'] = json.loads(item['payload'])
             except (json.JSONDecodeError, TypeError):
                 pass
+            # Process timestamp
+            if item.get('timestamp'):
+                try:
+                    dt_obj_aware = datetime.fromisoformat(item['timestamp'])
+                    item['timestamp'] = dt_obj_aware.strftime('%Y-%m-%d %H:%M:%S')
+                except (ValueError, TypeError):
+                    pass # Keep original if formatting fails
     
     return jsonify({'device_data': device_data})
 
